@@ -2,7 +2,16 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- תגיות PWA - חובה להתקנה -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f5f5f4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="שיר של יום">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <title>שיר של יום - לפי מנהג הגר"א</title>
     
     <!-- React & ReactDOM (UMD versions for browser) -->
@@ -19,11 +28,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .font-serif { font-family: 'Frank Ruhl Libre', serif; }
     </style>
 </head>
-<body class="bg-stone-100 text-stone-900">
+<body class="bg-stone-100 text-stone-900 overscroll-none">
     
     <!-- Root element for React App -->
     <div id="root"></div>
@@ -31,7 +40,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- Custom SVG Icons (Replacing lucide-react to work standalone in HTML) ---
+        // Custom SVG Icons
         const Calendar = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
         const MapPin = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
         const BookOpen = ({size=24, strokeWidth=2, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
@@ -68,20 +77,13 @@
         const YEARS_LIST = Array.from({length: 150}, (_, i) => 5700 + i);
 
         const PESACH_SEQ = [
-          { num: 'קיד', chapter: 114 },
-          { num: 'עח', chapter: 78 },
-          { num: 'פ', chapter: 80 },
-          { num: 'קה', chapter: 105 },
-          { num: 'קלה', chapter: 135 },
-          { num: 'סו', chapter: 66 },
+          { num: 'קיד', chapter: 114 }, { num: 'עח', chapter: 78 }, { num: 'פ', chapter: 80 },
+          { num: 'קה', chapter: 105 }, { num: 'קלה', chapter: 135 }, { num: 'סו', chapter: 66 },
         ];
 
         const SUKKOT_CHM_SEQ = [
-          { num: 'כט', chapter: 29 },
-          { num: 'נ', chapter: 50 },
-          { num: 'צד (טז-כג)', chapter: '94.16-23' },
-          { num: 'צד (א-טו)', chapter: '94.1-15' },
-          { num: 'פא', chapter: 81 },
+          { num: 'כט', chapter: 29 }, { num: 'נ', chapter: 50 }, { num: 'צד (טז-כג)', chapter: '94.16-23' },
+          { num: 'צד (א-טו)', chapter: '94.1-15' }, { num: 'פא', chapter: 81 },
         ];
 
         const getHebrewNumber = (num) => {
@@ -90,67 +92,51 @@
           if (num === 16) return 'ט״ז';
           const units = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
           const tens = ['', 'י', 'כ', 'ל'];
-          const t = Math.floor(num / 10);
-          const u = num % 10;
-          const result = tens[t] + units[u];
-          if (result.length === 1) return result + '׳';
-          return result.slice(0, -1) + '״' + result.slice(-1);
+          const result = tens[Math.floor(num / 10)] + units[num % 10];
+          return result.length === 1 ? result + '׳' : result.slice(0, -1) + '״' + result.slice(-1);
         };
 
         const getHebrewVerseNumber = (num) => {
           if (num === 15) return 'טו';
           if (num === 16) return 'טז';
-          let str = '';
-          let n = num;
+          let str = '', n = num;
           while(n >= 400) { str += 'ת'; n -= 400; }
           if (n >= 300) { str += 'ש'; n -= 300; }
           if (n >= 200) { str += 'ר'; n -= 200; }
           if (n >= 100) { str += 'ק'; n -= 100; }
           const tens = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'];
           const units = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
-          str += tens[Math.floor((n % 100) / 10)];
-          str += units[n % 10];
+          str += tens[Math.floor((n % 100) / 10)] + units[n % 10];
           return str;
         };
 
         const getHebrewYearString = (year) => {
           if (!year) return '';
-          let y = year % 1000;
-          let str = '';
+          let y = year % 1000, str = '';
           while (y >= 400) { str += 'ת'; y -= 400; }
           if (y >= 300) { str += 'ש'; y -= 300; }
           if (y >= 200) { str += 'ר'; y -= 200; }
           if (y >= 100) { str += 'ק'; y -= 100; }
           const tens = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'];
           const units = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
-          let t = Math.floor((y % 100) / 10);
-          let u = y % 10;
-          if (y % 100 === 15) { str += 'טו'; }
-          else if (y % 100 === 16) { str += 'טז'; }
-          else { str += tens[t] + units[u]; }
-          
-          if (str.length > 1) return 'ה׳ ' + str.slice(0, -1) + '״' + str.slice(-1);
-          if (str.length === 1) return 'ה׳ ' + str + '׳';
-          return `ה׳ ${str}`;
+          if (y % 100 === 15) str += 'טו';
+          else if (y % 100 === 16) str += 'טז';
+          else str += tens[Math.floor((y % 100) / 10)] + units[y % 10];
+          return str.length > 1 ? 'ה׳ ' + str.slice(0, -1) + '״' + str.slice(-1) : 'ה׳ ' + str + '׳';
         };
 
         const getHolidayPsalm = (holidayName, dayOfWeek, isDiaspora) => {
-          
           // חסימת "ערב חג" כדי שלא יזוהה בטעות כחג עצמו (לדוגמה: Erev Rosh Hashana)
           if (holidayName.includes('Erev')) return null;
-          
+
           if (holidayName.includes('Rosh Hashana')) return { num: 'פא', chapter: 81, reason: 'ראש השנה' };
           if (holidayName.includes('Yom Kippur')) return { num: 'לב', chapter: 32, reason: 'יום כיפור' };
           
           if (holidayName.includes('Chanukah') && !holidayName.includes('Candle')) {
-            let reason = 'חנוכה';
             const match = holidayName.match(/Day (\d+)/i) || holidayName.match(/(\d+)\w* Day/i);
-            if (match) {
-                const num = parseInt(match[1]);
-                const hebLetters = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח'];
-                reason = `${hebLetters[num]}' דחנוכה`;
-            }
-            return { num: 'ל', chapter: 30, reason: reason };
+            const num = match ? parseInt(match[1]) : 1;
+            const hebLetters = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח'];
+            return { num: 'ל', chapter: 30, reason: `${hebLetters[num]}' דחנוכה` };
           }
           
           if (holidayName.includes('Purim')) return { num: 'כב', chapter: 22, reason: 'פורים' };
@@ -164,28 +150,17 @@
              const match = holidayName.match(/Pesach ([IVX]+)/);
              if (match) {
                 const dayNum = romanToArabic[match[1]];
-
                 if (dayNum === 7) return { num: 'יח', chapter: 18, reason: 'שביעי של פסח' };
                 if (dayNum === 8 && isDiaspora) return { num: 'קלו', chapter: 136, reason: 'אחרון של פסח' };
 
                 if (dayNum >= 1 && dayNum <= 6) {
                    let validDaysCount = 0;
                    for (let d = 1; d <= dayNum; d++) {
-                     const dow = (dayOfWeek - (dayNum - d)) % 7;
-                     const normalizedDow = (dow + 7) % 7;
-                     if (normalizedDow !== 6) validDaysCount++;
+                     const dow = (dayOfWeek - (dayNum - d) + 7) % 7;
+                     if (dow !== 6) validDaysCount++;
                    }
-
-                   const seqIdx = Math.max(0, validDaysCount - 1);
-                   const psalmInfo = PESACH_SEQ[seqIdx];
-
-                   let reason = '';
-                   if (dayNum === 1) reason = "א' של פסח";
-                   else if (dayNum === 2 && isDiaspora) reason = "ב' של פסח";
-                   else {
-                     const chmIdx = isDiaspora ? dayNum - 2 : dayNum - 1;
-                     reason = `${hebLetters[chmIdx]}' דחול המועד פסח`;
-                   }
+                   const psalmInfo = PESACH_SEQ[Math.max(0, validDaysCount - 1)];
+                   let reason = dayNum === 1 ? "א' של פסח" : (dayNum === 2 && isDiaspora) ? "ב' של פסח" : `${hebLetters[isDiaspora ? dayNum - 2 : dayNum - 1]}' דחול המועד פסח`;
                    return { num: psalmInfo.num, chapter: psalmInfo.chapter, reason: reason };
                 }
              }
@@ -199,26 +174,15 @@
               const match = holidayName.match(/Sukkot ([IVX]+)/);
               if (match) {
                 const dayNum = romanToArabic[match[1]];
-
                 if (dayNum === 1) return { num: 'עו', chapter: 76, reason: 'א\' של סוכות' };
-                
                 if (dayNum >= 2 && dayNum <= 6) {
                    let validChmDays = 0;
                    for (let d = 2; d <= dayNum; d++) {
-                     const dow = (dayOfWeek - (dayNum - d)) % 7;
-                     const normalizedDow = (dow + 7) % 7;
-                     if (normalizedDow !== 6) validChmDays++;
+                     const dow = (dayOfWeek - (dayNum - d) + 7) % 7;
+                     if (dow !== 6) validChmDays++;
                    }
-
-                   const seqIdx = Math.max(0, validChmDays - 1);
-                   const psalmInfo = SUKKOT_CHM_SEQ[seqIdx];
-
-                   let reason = '';
-                   if (dayNum === 2 && isDiaspora) reason = "ב' של סוכות";
-                   else {
-                     const chmIdx = isDiaspora ? dayNum - 2 : dayNum - 1;
-                     reason = `${hebLetters[chmIdx]}' דחול המועד סוכות`;
-                   }
+                   const psalmInfo = SUKKOT_CHM_SEQ[Math.max(0, validChmDays - 1)];
+                   let reason = (dayNum === 2 && isDiaspora) ? "ב' של סוכות" : `${hebLetters[isDiaspora ? dayNum - 2 : dayNum - 1]}' דחול המועד סוכות`;
                    return { num: psalmInfo.num, chapter: psalmInfo.chapter, reason: reason };
                 }
               }
@@ -226,85 +190,59 @@
           return null;
         };
 
-        const ORIGINAL_TABLE_DATA = [
-          { day: "שבת", psalm: "מזמור שיר ליום השבת", chapter: "צב" },
-          { day: "ראש חודש", psalm: "ברכי נפשי", chapter: "קד" },
-          { day: "ראש השנה", psalm: "למנצח על הגיתית לאסף", chapter: "פא" },
-          { day: "יום כיפור", psalm: "למנצח אשרי נשוי פשע", chapter: "לב" },
-          { day: "חנוכה", psalm: "מזמור שיר חנוכת", chapter: "ל" },
-          { day: "פורים", psalm: "למנצח על אילת השחר", chapter: "כב" },
-          { day: "א של פסח ביום א ג ה", psalm: "בצאת ישראל", chapter: "קיד" },
-          { day: "שני של פסח בחו\"ל", psalm: "משכיל לאסף האזינה", chapter: "עח" },
-          { day: "א חול המועד, ביום ב ד ו", psalm: "משכיל לאסף האזינה", chapter: "עח" },
-          { day: "א חול המועד, ביום א", psalm: "בצאת ישראל", chapter: "קיד" },
-          { day: "ב חול המועד, ביום ג ה", psalm: "למנצח אל שושנים", chapter: "פ" },
-          { day: "ב חול המועד, ביום ב", psalm: "משכיל לאסף האזינה", chapter: "עח" },
-          { day: "ג חול המועד, ביום ד ו", psalm: "הודו לה' קראו בשמו", chapter: "קה" },
-          { day: "ג חול המועד, ביום א ג", psalm: "למנצח אל שושנים", chapter: "פ" },
-          { day: "ד חול המועד, ביום ה", psalm: "הללויה הללו את שם ה'", chapter: "קלה" },
-          { day: "ד חול המועד, ביום ב ד", psalm: "הודו לה' קראו בשמו", chapter: "קה" },
-          { day: "ה חול המועד, ביום ו", psalm: "למנצח שיר מזמור", chapter: "סו" },
-          { day: "ה חול המועד, ביום א, ג, ה", psalm: "הללויה הללו את שם ה'", chapter: "קלה" },
-          { day: "שביעי של פסח ביום ב ד ו", psalm: "למנצח לעבד ה'", chapter: "יח" },
-          { day: "אחרון של פסח בחו\"ל ביום ג ה", psalm: "הוֹדוּ להי כִּי-טוֹב", chapter: "קלו" },
-          { day: "אחרון של פסח בחו\"ל ביום א", psalm: "למנצח לעבד ה'", chapter: "יח" },
-          { day: "שבועות", psalm: "למנצח השמים מספרים", chapter: "יט" },
-          { day: "שני של שבועות בחו\"ל", psalm: "לַמְנַצֵחַ לְדָוִד, מִזְמוֹר שִׁיר", chapter: "סח" },
-          { day: "חג ראשון של סוכות ביום ב ג ה", psalm: "למנצח בנגינות מזמור לאסף", chapter: "עו" },
-          { day: "שני של סוכות בחו\"ל", psalm: "לַמְנַצֵחַ, מַשְׂכִּיל לִבְנֵי-קֹרַח", chapter: "מב" },
-          { day: "א חול המועד ביום א ג ד ו", psalm: "מזמור לדוד הבו להי", chapter: "כט" },
-          { day: "ב חול המועד ביום ב ד ה", psalm: "מזמור לאסף אל אלוקים ה'", chapter: "נ" },
-          { day: "ג חול המועד ביום ג ה ו", psalm: "מי יקום לי", chapter: "צד, טז-כג" },
-          { day: "ג חול המועד ביום א", psalm: "מזמור לאסף אל אלוקים ה'", chapter: "נ" },
-          { day: "ד חול המועד ביום ד ו", psalm: "אל נקמות ה'-עד כל ישרי לב", chapter: "צד, א-טו" },
-          { day: "ד חול המועד ביום ב", psalm: "מי יקום לי", chapter: "צד, טז-כג" },
-          { day: "ה חול המועד ביום ה", psalm: "למנצח על הגיתית", chapter: "פא" },
-          { day: "ה חול המועד ביום א ג", psalm: "אל נקמות ה'-עד כל ישרי לב", chapter: "צד, א-טו" },
-          { day: "הושענא רבא ביום ו", psalm: "מזמור לאסף אלוקים נצב", chapter: "פב" },
-          { day: "הושענא רבא ביום א ב ד", psalm: "למנצח על הגיתית", chapter: "פא" },
-          { day: "שמיני עצרת ביום ב ג ה", psalm: "למנצח על השמינית", chapter: "יב" },
-          { day: "שמחת תורה בחו\"ל ביום ג, ד, ו", psalm: "לַמְנַצֵחַ עַל-הַגִּתִּית", chapter: "ח" },
-          { day: "שמחת תורה בחו\"ל ביום א", psalm: "למנצח על השמינית", chapter: "יב" },
-        ];
-
         const RulesModal = ({ isOpen, onClose }) => {
             if (!isOpen) return null;
-            
             return (
-                <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-2 md:p-4" onClick={onClose}>
-                    <div className="bg-white rounded shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" dir="rtl" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-center p-4 border-b border-stone-300 bg-stone-100 shrink-0">
+                <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col" dir="rtl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-center p-4 border-b border-stone-200 bg-stone-50 shrink-0">
                             <h2 className="text-xl font-bold text-stone-800 flex items-center gap-2">
-                                <Info size={20} className="text-stone-600" />
-                                שיר של יום לפי מנהג הגר"א
+                                <Info size={20} className="text-amber-600" />
+                                לוח כללי שיר של יום (הגר"א)
                             </h2>
-                            <button onClick={onClose} className="p-2 text-stone-500 hover:bg-stone-300 rounded transition-colors">
+                            <button onClick={onClose} className="p-2 text-stone-500 hover:bg-stone-200 rounded-full transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
                         <div className="overflow-y-auto p-4 md:p-6 bg-white">
-                            <p className="text-base text-stone-800 mb-6 font-medium">
-                                עקרונות:<br/>
+                            <p className="text-sm text-stone-600 mb-4 bg-stone-100 p-3 rounded-lg border border-stone-200">
+                                <strong className="block mb-1 text-stone-800">עקרונות המנהג:</strong>
                                 א. אין אומרים שני מזמורים ביום אחד.<br/>
                                 ב. שיר של ראש חודש דוחה כל שיר אחר.<br/>
                                 ג. שיר של שבת דוחה שיר של יום טוב ושל חנוכה.
                             </p>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-base text-right border-collapse border border-stone-800">
-                                    <thead className="bg-stone-50">
+                            <div className="overflow-x-auto border border-stone-200 rounded-lg">
+                                <table className="w-full text-sm text-right">
+                                    <thead className="bg-stone-100 text-stone-700 font-bold border-b border-stone-200">
                                         <tr>
-                                            <th className="p-2 border border-stone-800 font-bold w-1/3">היום</th>
-                                            <th className="p-2 border border-stone-800 font-bold text-center" colSpan="2">המזמור בתהילים</th>
+                                            <th className="p-3">היום</th>
+                                            <th className="p-3">המזמור</th>
+                                            <th className="p-3 w-16 text-center">פרק</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        {ORIGINAL_TABLE_DATA.map((row, index) => (
-                                            <tr key={index} className="hover:bg-stone-100">
-                                                <td className="p-2 border border-stone-800">{row.day}</td>
-                                                <td className="p-2 border border-stone-800">{row.psalm}</td>
-                                                <td className="p-2 border border-stone-800 font-bold text-center w-24">{row.chapter}</td>
-                                            </tr>
-                                        ))}
+                                    <tbody className="divide-y divide-stone-200 text-stone-800">
+                                        <tr className="hover:bg-stone-50"><td className="p-3">שבת</td><td className="p-3">מזמור שיר ליום השבת</td><td className="p-3 text-center font-bold">צב</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">ראש חודש</td><td className="p-3">ברכי נפשי</td><td className="p-3 text-center font-bold">קד</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">ראש השנה</td><td className="p-3">למנצח על הגיתית לאסף</td><td className="p-3 text-center font-bold">פא</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">יום כיפור</td><td className="p-3">למנצח אשרי נשוי פשע</td><td className="p-3 text-center font-bold">לב</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">חנוכה</td><td className="p-3">מזמור שיר חנוכת</td><td className="p-3 text-center font-bold">ל</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">פורים</td><td className="p-3">למנצח על אילת השחר</td><td className="p-3 text-center font-bold">כב</td></tr>
+                                        <tr className="hover:bg-stone-50 bg-amber-50/50"><td className="p-3 font-semibold" colSpan="3">פסח</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">א' של פסח</td><td className="p-3">בצאת ישראל</td><td className="p-3 text-center font-bold">קיד</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">ב' של פסח (חו"ל)</td><td className="p-3">משכיל לאסף האזינה</td><td className="p-3 text-center font-bold">עח</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">חול המועד (סדר מתגלגל)</td><td className="p-3">משכיל / אל שושנים / הודו קראו / הללויה / שיר מזמור</td><td className="p-3 text-center font-bold text-xs">עח-סו</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">שביעי של פסח</td><td className="p-3">למנצח לעבד ה'</td><td className="p-3 text-center font-bold">יח</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">אחרון של פסח (חו"ל)</td><td className="p-3">הודו לה' כי טוב</td><td className="p-3 text-center font-bold">קלו</td></tr>
+                                        <tr className="hover:bg-stone-50 bg-amber-50/50"><td className="p-3 font-semibold" colSpan="3">שבועות</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">שבועות</td><td className="p-3">למנצח השמים מספרים</td><td className="p-3 text-center font-bold">יט</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">שני של שבועות (חו"ל)</td><td className="p-3">למנצח לדוד מזמור שיר</td><td className="p-3 text-center font-bold">סח</td></tr>
+                                        <tr className="hover:bg-stone-50 bg-amber-50/50"><td className="p-3 font-semibold" colSpan="3">סוכות</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">א' של סוכות</td><td className="p-3">למנצח בנגינות מזמור לאסף</td><td className="p-3 text-center font-bold">עו</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">ב' של סוכות (חו"ל)</td><td className="p-3">למנצח משכיל לבני קרח</td><td className="p-3 text-center font-bold">מב</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">חול המועד (סדר מתגלגל)</td><td className="p-3">הבו לה' / אל אלוהים / מי יקום / אל נקמות / על הגיתית</td><td className="p-3 text-center font-bold text-xs">כט-פא</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">הושענא רבה</td><td className="p-3">מזמור לאסף אלוהים נצב</td><td className="p-3 text-center font-bold">פב</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">שמיני עצרת</td><td className="p-3">למנצח על השמינית</td><td className="p-3 text-center font-bold">יב</td></tr>
+                                        <tr className="hover:bg-stone-50"><td className="p-3">שמחת תורה (חו"ל)</td><td className="p-3">למנצח על הגיתית</td><td className="p-3 text-center font-bold">ח</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -372,15 +310,12 @@
                 const newGreg = `${data.gy}-${String(data.gm).padStart(2, '0')}-${String(data.gd).padStart(2, '0')}`;
                 setSelectedDate(newGreg); 
               }
-            } catch (err) { 
-              console.error("שגיאה בהמרת תאריך עברי", err); 
-            }
+            } catch (err) { console.error("Error", err); }
           };
 
           const fetchEventsForDate = async () => {
             setLoadingEvents(true);
             setError(null);
-
             try {
               const dateObj = new Date(selectedDate);
               const year = dateObj.getFullYear();
@@ -391,68 +326,36 @@
               const hebcalUrl = `https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=${year}&month=${month}&d=${day}&c=off&geo=none&i=${isDiaspora ? 'off' : 'on'}`;
               const converterUrl = `https://www.hebcal.com/converter?cfg=json&date=${selectedDate}&g2h=1`;
               
-              const [hebcalRes, converterRes] = await Promise.all([
-                  fetch(hebcalUrl), fetch(converterUrl)
-              ]);
-              
+              const [hebcalRes, converterRes] = await Promise.all([fetch(hebcalUrl), fetch(converterUrl)]);
               const data = await hebcalRes.json();
               const convData = await converterRes.json();
 
               setHebrewDateStr(convData.hebrew);
-              setHebYear(convData.hy);
-              setHebMonth(convData.hm);
-              setHebDay(convData.hd);
+              setHebYear(convData.hy); setHebMonth(convData.hm); setHebDay(convData.hd);
 
-              const dateString = selectedDate; 
-              const daysEvents = data.items ? data.items.filter(item => item.date === dateString) : [];
-              
+              const daysEvents = data.items ? data.items.filter(item => item.date === selectedDate) : [];
               const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-              let gatheredEvents = [];
-              
-              gatheredEvents.push({ 
+              let gatheredEvents = [{ 
                   name: `יום ${hebrewDays[dayOfWeek]}`, 
                   chapter: REGULAR_DAYS[dayOfWeek].chapter,
                   num: REGULAR_DAYS[dayOfWeek].num,
                   isGraDefault: false 
-              });
+              }];
 
               const isShabbat = dayOfWeek === 6;
               const isRoshChodesh = daysEvents.some(e => e.title.includes('Rosh Chodesh'));
-              
-              if (isRoshChodesh) {
-                  gatheredEvents.push({ 
-                      name: 'ראש חודש', 
-                      chapter: 104, 
-                      num: 'קד', 
-                      isGraDefault: false 
-                  });
-              }
+              if (isRoshChodesh) gatheredEvents.push({ name: 'ראש חודש', chapter: 104, num: 'קד', isGraDefault: false });
 
               let holidayPsalmResult = null;
               for (const event of daysEvents) {
                 const hp = getHolidayPsalm(event.title, dayOfWeek, isDiaspora);
                 if (hp) {
                   holidayPsalmResult = hp;
-                  gatheredEvents.push({ 
-                      name: hp.reason, 
-                      chapter: hp.chapter, 
-                      num: hp.num, 
-                      isGraDefault: false 
-                  });
+                  gatheredEvents.push({ name: hp.reason, chapter: hp.chapter, num: hp.num, isGraDefault: false });
                 }
               }
 
-              let winnerName = '';
-              if (isRoshChodesh) {
-                winnerName = 'ראש חודש';
-              } else if (isShabbat) {
-                winnerName = 'יום שבת';
-              } else if (holidayPsalmResult) {
-                winnerName = holidayPsalmResult.reason;
-              } else {
-                winnerName = `יום ${hebrewDays[dayOfWeek]}`;
-              }
-
+              let winnerName = isRoshChodesh ? 'ראש חודש' : isShabbat ? 'יום שבת' : holidayPsalmResult ? holidayPsalmResult.reason : `יום ${hebrewDays[dayOfWeek]}`;
               const defaultEv = gatheredEvents.find(e => e.name === winnerName);
               
               setEventsList(gatheredEvents);
@@ -462,10 +365,8 @@
               } else {
                   setActiveEvent(gatheredEvents[0]);
               }
-              
             } catch (err) {
-              console.error("Fetch Events Error:", err);
-              setError('אירעה שגיאה בטעינת הנתונים מהשרת. נסה שוב.');
+              setError('אירעה שגיאה בטעינת הנתונים מהשרת.');
             } finally {
               setLoadingEvents(false);
             }
@@ -483,45 +384,33 @@
                 const textArray = Array.isArray(sefariaData.he) ? sefariaData.he : [sefariaData.he];
                 if (textArray.length > 0) {
                     setPsalmText(textArray);
-                } else {
-                    setError('לא נמצא טקסט עבור פרק זה בשרת.');
-                }
-              } else {
-                setError('שגיאה בקבלת הטקסט מ-Sefaria.');
-              }
+                } else throw new Error('Empty text');
+              } else throw new Error('API Error');
             } catch(err) {
-              console.error("Fetch Psalm Error:", err);
               setError('אירעה שגיאה בטעינת פסוקי התהילים.');
             } finally {
               setLoadingText(false);
             }
           };
 
-          const createMarkup = (htmlString) => {
-            return { __html: typeof htmlString === 'string' ? htmlString : '' };
-          };
+          const createMarkup = (htmlString) => ({ __html: typeof htmlString === 'string' ? htmlString : '' });
 
           const getStartVerseOffset = () => {
               if (!activeEvent || !activeEvent.chapter || typeof activeEvent.chapter.toString !== 'function') return 0;
               const chapterStr = activeEvent.chapter.toString();
-              if (!chapterStr.includes('.')) return 0;
               const match = chapterStr.match(/\.(\d+)/);
               return match ? parseInt(match[1], 10) - 1 : 0;
           };
 
           return (
             <div className="min-h-screen bg-stone-100 font-sans text-right flex flex-col" dir="rtl">
-              
               <RulesModal isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
 
               <header className="bg-white shadow-sm border-b border-stone-200 py-6 px-4 shrink-0 text-center relative z-10">
                 <div className="max-w-4xl mx-auto flex flex-col items-center">
-                    <div className="flex justify-center mb-3 text-amber-700">
-                        <BookOpen size={36} strokeWidth={1.5} />
-                    </div>
+                    <div className="flex justify-center mb-3 text-amber-700"><BookOpen size={36} strokeWidth={1.5} /></div>
                     <h1 className="text-3xl font-bold text-stone-800 mb-2">שיר של יום</h1>
                     <p className="text-stone-500 mb-4 text-sm font-medium">לפי מנהג הגר"א מווילנא</p>
-                    
                     {hebrewDateStr && (
                         <div className="text-xl md:text-2xl font-serif text-amber-900 bg-amber-50 px-6 py-2 rounded-full border border-amber-200 shadow-sm inline-block">
                         {hebrewDateStr}
@@ -542,186 +431,93 @@
                       <p className="text-center font-medium">{error}</p>
                     </div>
                   ) : activeEvent && (
-                    <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-6 md:p-10 mb-8 transition-opacity duration-500">
-                      
+                    <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-6 md:p-10 mb-8 animate-in fade-in duration-500">
                       <div className="flex flex-wrap justify-center gap-3 mb-10 border-b border-stone-100 pb-8">
                          {eventsList.map((ev, idx) => {
                             const isActive = activeEvent.name === ev.name;
                             return (
-                                <button 
-                                    key={idx} 
-                                    onClick={() => setActiveEvent(ev)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                                        isActive 
-                                            ? 'bg-amber-100 text-amber-900 border-2 border-amber-400 shadow-sm' 
-                                            : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
-                                    }`}
-                                >
+                                <button key={idx} onClick={() => setActiveEvent(ev)}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive ? 'bg-amber-100 text-amber-900 border-2 border-amber-400 shadow-sm' : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'}`}>
                                     {ev.name}
-                                    {ev.isGraDefault && (
-                                        <Crown 
-                                            size={16} 
-                                            strokeWidth={2.5} 
-                                            className={isActive ? "text-amber-600" : "text-stone-400"} 
-                                        />
-                                    )}
+                                    {ev.isGraDefault && <Crown size={16} strokeWidth={2.5} className={isActive ? "text-amber-600" : "text-stone-400"} title='פסיקת הגר"א ליום זה'/>}
                                 </button>
                             )
                          })}
                       </div>
-
                       <div className="text-center mb-10">
-                        <h3 className="text-4xl md:text-5xl font-serif font-bold text-stone-800 tracking-tight">
-                          פרק {activeEvent.num}
-                        </h3>
+                        <h3 className="text-4xl md:text-5xl font-serif font-bold text-stone-800 tracking-tight">פרק {activeEvent.num}</h3>
                       </div>
-                      
                       <div className="text-xl md:text-2xl leading-relaxed md:leading-loose text-stone-800 font-serif pb-6">
                         {psalmText.map((verse, index) => {
-                          if (!verse) return null;
                           const absoluteVerseNum = getStartVerseOffset() + index + 1;
                           return (
                             <div key={index} className="mb-4 flex gap-4">
-                                <span className="text-stone-400 text-base select-none mt-2 w-8 text-left shrink-0 font-sans">
-                                {getHebrewVerseNumber(absoluteVerseNum)}
-                                </span>
+                                <span className="text-stone-400 text-base select-none mt-2 w-8 text-left shrink-0 font-sans">{getHebrewVerseNumber(absoluteVerseNum)}</span>
                                 <p dangerouslySetInnerHTML={createMarkup(verse)} className="flex-1" />
                             </div>
                           );
                         })}
                       </div>
-
                     </div>
                   )}
               </main>
 
-              <footer className="bg-stone-800 text-stone-200 py-6 px-4 shrink-0 border-t-4 border-amber-600 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+              <footer className="bg-stone-800 text-stone-200 py-6 px-4 shrink-0 border-t-4 border-amber-600 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-10 md:pb-6">
                 <div className="max-w-5xl mx-auto flex flex-col items-center gap-6">
-                    
                     <div className="flex flex-col md:flex-row justify-center items-center gap-4 w-full">
-                        <button 
-                          onClick={handleToday}
-                          className="flex items-center justify-center gap-2 bg-stone-700 hover:bg-stone-600 text-white px-5 py-2.5 rounded-lg text-sm transition-colors font-medium w-full md:w-auto shrink-0 shadow-sm"
-                        >
-                          <Clock size={16} />
-                          הצג את היום
-                        </button>
-
+                        <button onClick={handleToday} className="flex items-center justify-center gap-2 bg-stone-700 hover:bg-stone-600 text-white px-5 py-2.5 rounded-lg text-sm transition-colors font-medium w-full md:w-auto shrink-0 shadow-sm"><Clock size={16} /> הצג את היום</button>
                         <div className="h-8 w-px bg-stone-600 hidden md:block"></div>
-
                         <div className="flex bg-stone-900 p-1 rounded-lg w-full md:w-auto shrink-0">
-                          <button 
-                            onClick={() => setDateMode('hebrew')} 
-                            className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'hebrew' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}
-                          >
-                            עברי
-                          </button>
-                          <button 
-                            onClick={() => setDateMode('gregorian')} 
-                            className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'gregorian' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}
-                          >
-                            לועזי
-                          </button>
+                          <button onClick={() => setDateMode('hebrew')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'hebrew' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}>עברי</button>
+                          <button onClick={() => setDateMode('gregorian')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'gregorian' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}>לועזי</button>
                         </div>
-
                         <div className="flex items-center gap-1 w-full md:w-auto">
-                            <button 
-                                onClick={() => adjustDay(-1)} 
-                                className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0"
-                                title="יום קודם"
-                            >
-                                <ChevronRight size={18} />
-                            </button>
-
+                            <button onClick={() => adjustDay(-1)} className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0" title="יום קודם"><ChevronRight size={18} /></button>
                             {dateMode === 'gregorian' ? (
                               <div className="flex items-center gap-2 bg-stone-700 px-4 py-2 rounded-lg w-full md:w-auto shadow-sm">
                                 <Calendar className="text-stone-400 shrink-0" size={18} />
-                                <input 
-                                  type="date" 
-                                  value={selectedDate}
-                                  onChange={(e) => setSelectedDate(e.target.value)}
-                                  className="bg-transparent text-white outline-none w-full color-scheme-dark"
-                                  style={{ colorScheme: 'dark' }}
-                                />
+                                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent text-white outline-none w-full color-scheme-dark" style={{ colorScheme: 'dark' }}/>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2 bg-stone-700 px-4 py-2 rounded-lg text-white w-full justify-center shadow-sm flex-1 md:flex-none h-10 min-w-0">
-                                 <CalendarDays className="text-stone-400 shrink-0" size={18} hidden />
-                                 <select 
-                                    value={hebDay} 
-                                    onChange={e => handleHebrewDateChange(hebYear, hebMonth, Number(e.target.value))} 
-                                    className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate"
-                                 >
-                                   {[...Array(30).keys()].map(i => <option key={i+1} value={i+1} className="bg-stone-800">{getHebrewNumber(i+1)}</option>)}
-                                 </select>
+                              <div className="flex items-center gap-2 bg-stone-700 px-2 py-2 rounded-lg text-white w-full justify-center shadow-sm flex-1 md:flex-none h-10 min-w-0">
+                                 <CalendarDays className="text-stone-400 shrink-0 hidden md:block" size={18} />
+                                 <select value={hebDay} onChange={e => handleHebrewDateChange(hebYear, hebMonth, Number(e.target.value))} className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate">{[...Array(30).keys()].map(i => <option key={i+1} value={i+1} className="bg-stone-800">{getHebrewNumber(i+1)}</option>)}</select>
                                  <span className="text-stone-500 shrink-0">/</span>
-                                 <select 
-                                    value={hebMonth} 
-                                    onChange={e => handleHebrewDateChange(hebYear, e.target.value, hebDay)} 
-                                    className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate"
-                                 >
-                                   {HEBREW_MONTHS.map(m => <option key={m.en} value={m.en} className="bg-stone-800">{m.he}</option>)}
-                                 </select>
+                                 <select value={hebMonth} onChange={e => handleHebrewDateChange(hebYear, e.target.value, hebDay)} className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate">{HEBREW_MONTHS.map(m => <option key={m.en} value={m.en} className="bg-stone-800">{m.he}</option>)}</select>
                                  <span className="text-stone-500 shrink-0">/</span>
-                                 <select 
-                                    value={hebYear} 
-                                    onChange={e => handleHebrewDateChange(Number(e.target.value), hebMonth, hebDay)} 
-                                    className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate"
-                                 >
-                                    {YEARS_LIST.map(y => (
-                                      <option key={y} value={y} className="bg-stone-800">{getHebrewYearString(y)}</option>
-                                    ))}
-                                 </select>
+                                 <select value={hebYear} onChange={e => handleHebrewDateChange(Number(e.target.value), hebMonth, hebDay)} className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate">{YEARS_LIST.map(y => <option key={y} value={y} className="bg-stone-800">{getHebrewYearString(y)}</option>)}</select>
                               </div>
                             )}
-
-                            <button 
-                                onClick={() => adjustDay(1)} 
-                                className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0"
-                                title="יום הבא"
-                            >
-                                <ChevronLeft size={18} />
-                            </button>
+                            <button onClick={() => adjustDay(1)} className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0" title="יום הבא"><ChevronLeft size={18} /></button>
                         </div>
-                        
                         <div className="h-8 w-px bg-stone-600 hidden md:block"></div>
-
                         <div className="flex items-center gap-1 bg-stone-900 p-1 rounded-lg w-full md:w-auto shrink-0 shadow-sm">
-                          <button
-                            onClick={() => setIsDiaspora(false)}
-                            className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${!isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}
-                          >
-                            <MapPin size={16} />
-                            בארץ
-                          </button>
-                          <button
-                            onClick={() => setIsDiaspora(true)}
-                            className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}
-                          >
-                            בחו"ל
-                          </button>
+                          <button onClick={() => setIsDiaspora(false)} className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${!isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}><MapPin size={16} /> בארץ</button>
+                          <button onClick={() => setIsDiaspora(true)} className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}>בחו"ל</button>
                         </div>
                     </div>
-
                     <div className="w-full flex justify-center border-t border-stone-700 pt-4">
-                        <button 
-                            onClick={() => setIsRulesModalOpen(true)}
-                            className="flex items-center gap-2 text-stone-400 hover:text-amber-400 transition-colors text-sm font-medium"
-                        >
-                            <Info size={16} />
-                            הצג את לוח הכללים השלם (כפי שמופיע בלוחות)
-                        </button>
+                        <button onClick={() => setIsRulesModalOpen(true)} className="flex items-center gap-2 text-stone-400 hover:text-amber-400 transition-colors text-sm font-medium"><Info size={16} /> הצג את לוח הכללים (טבלת המקור)</button>
                     </div>
-                    
                 </div>
               </footer>
-
             </div>
           );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+    </script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered!', reg))
+                    .catch(err => console.error('Service Worker Registration Failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
