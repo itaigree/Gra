@@ -34,7 +34,6 @@
 </head>
 <body class="bg-stone-100 text-stone-900 overscroll-none">
     
-    <!-- Root element for React App -->
     <div id="root"></div>
 
     <script type="text/babel">
@@ -126,7 +125,6 @@
         };
 
         const getHolidayPsalm = (holidayName, dayOfWeek, isDiaspora) => {
-          // חסימת "ערב חג" כדי שלא יזוהה בטעות כחג עצמו (לדוגמה: Erev Rosh Hashana)
           if (holidayName.includes('Erev')) return null;
 
           if (holidayName.includes('Rosh Hashana')) return { num: 'פא', chapter: 81, reason: 'ראש השנה' };
@@ -194,55 +192,74 @@
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
-                    <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col" dir="rtl" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col" dir="rtl" onClick={(e) => e.stopPropagation()}>
+                        
                         <div className="flex justify-between items-center p-4 border-b border-stone-200 bg-stone-50 shrink-0">
                             <h2 className="text-xl font-bold text-stone-800 flex items-center gap-2">
                                 <Info size={20} className="text-amber-600" />
-                                לוח כללי שיר של יום (הגר"א)
+                                שיר של יום לפי מנהג הגר"א
                             </h2>
                             <button onClick={onClose} className="p-2 text-stone-500 hover:bg-stone-200 rounded-full transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
+                        
                         <div className="overflow-y-auto p-4 md:p-6 bg-white">
                             <p className="text-sm text-stone-600 mb-4 bg-stone-100 p-3 rounded-lg border border-stone-200">
-                                <strong className="block mb-1 text-stone-800">עקרונות המנהג:</strong>
+                                <strong className="block mb-1 text-stone-800">עקרונות:</strong>
                                 א. אין אומרים שני מזמורים ביום אחד.<br/>
                                 ב. שיר של ראש חודש דוחה כל שיר אחר.<br/>
                                 ג. שיר של שבת דוחה שיר של יום טוב ושל חנוכה.
                             </p>
-                            <div className="overflow-x-auto border border-stone-200 rounded-lg">
-                                <table className="w-full text-sm text-right">
-                                    <thead className="bg-stone-100 text-stone-700 font-bold border-b border-stone-200">
+
+                            <div className="overflow-x-auto border border-stone-800 rounded-lg">
+                                <table className="w-full text-sm text-right border-collapse">
+                                    <thead className="bg-stone-50 font-bold border-b border-stone-800 text-stone-800">
                                         <tr>
-                                            <th className="p-3">היום</th>
-                                            <th className="p-3">המזמור</th>
-                                            <th className="p-3 w-16 text-center">פרק</th>
+                                            <th className="p-2 border-l border-stone-800 w-2/5">היום</th>
+                                            <th className="p-2 border-l border-stone-800 w-16 text-center">פרק</th>
+                                            <th className="p-2">המזמור בתהילים</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-stone-200 text-stone-800">
-                                        <tr className="hover:bg-stone-50"><td className="p-3">שבת</td><td className="p-3">מזמור שיר ליום השבת</td><td className="p-3 text-center font-bold">צב</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">ראש חודש</td><td className="p-3">ברכי נפשי</td><td className="p-3 text-center font-bold">קד</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">ראש השנה</td><td className="p-3">למנצח על הגיתית לאסף</td><td className="p-3 text-center font-bold">פא</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">יום כיפור</td><td className="p-3">למנצח אשרי נשוי פשע</td><td className="p-3 text-center font-bold">לב</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">חנוכה</td><td className="p-3">מזמור שיר חנוכת</td><td className="p-3 text-center font-bold">ל</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">פורים</td><td className="p-3">למנצח על אילת השחר</td><td className="p-3 text-center font-bold">כב</td></tr>
-                                        <tr className="hover:bg-stone-50 bg-amber-50/50"><td className="p-3 font-semibold" colSpan="3">פסח</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">א' של פסח</td><td className="p-3">בצאת ישראל</td><td className="p-3 text-center font-bold">קיד</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">ב' של פסח (חו"ל)</td><td className="p-3">משכיל לאסף האזינה</td><td className="p-3 text-center font-bold">עח</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">חול המועד (סדר מתגלגל)</td><td className="p-3">משכיל / אל שושנים / הודו קראו / הללויה / שיר מזמור</td><td className="p-3 text-center font-bold text-xs">עח-סו</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">שביעי של פסח</td><td className="p-3">למנצח לעבד ה'</td><td className="p-3 text-center font-bold">יח</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">אחרון של פסח (חו"ל)</td><td className="p-3">הודו לה' כי טוב</td><td className="p-3 text-center font-bold">קלו</td></tr>
-                                        <tr className="hover:bg-stone-50 bg-amber-50/50"><td className="p-3 font-semibold" colSpan="3">שבועות</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">שבועות</td><td className="p-3">למנצח השמים מספרים</td><td className="p-3 text-center font-bold">יט</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">שני של שבועות (חו"ל)</td><td className="p-3">למנצח לדוד מזמור שיר</td><td className="p-3 text-center font-bold">סח</td></tr>
-                                        <tr className="hover:bg-stone-50 bg-amber-50/50"><td className="p-3 font-semibold" colSpan="3">סוכות</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">א' של סוכות</td><td className="p-3">למנצח בנגינות מזמור לאסף</td><td className="p-3 text-center font-bold">עו</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">ב' של סוכות (חו"ל)</td><td className="p-3">למנצח משכיל לבני קרח</td><td className="p-3 text-center font-bold">מב</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">חול המועד (סדר מתגלגל)</td><td className="p-3">הבו לה' / אל אלוהים / מי יקום / אל נקמות / על הגיתית</td><td className="p-3 text-center font-bold text-xs">כט-פא</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">הושענא רבה</td><td className="p-3">מזמור לאסף אלוהים נצב</td><td className="p-3 text-center font-bold">פב</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">שמיני עצרת</td><td className="p-3">למנצח על השמינית</td><td className="p-3 text-center font-bold">יב</td></tr>
-                                        <tr className="hover:bg-stone-50"><td className="p-3">שמחת תורה (חו"ל)</td><td className="p-3">למנצח על הגיתית</td><td className="p-3 text-center font-bold">ח</td></tr>
+                                    <tbody className="text-stone-800 font-medium">
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שבת</td><td className="p-2 border-l border-stone-800 text-center font-bold">צב</td><td className="p-2">מזמור שיר ליום השבת</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ראש חודש</td><td className="p-2 border-l border-stone-800 text-center font-bold">קד</td><td className="p-2">ברכי נפשי</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ראש השנה</td><td className="p-2 border-l border-stone-800 text-center font-bold">פא</td><td className="p-2">למנצח על הגיתית לאסף</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">יום כיפור</td><td className="p-2 border-l border-stone-800 text-center font-bold">לב</td><td className="p-2">למנצח אשרי נשוי פשע</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">חנוכה</td><td className="p-2 border-l border-stone-800 text-center font-bold">ל</td><td className="p-2">מזמור שיר חנוכת</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">פורים</td><td className="p-2 border-l border-stone-800 text-center font-bold">כב</td><td className="p-2">למנצח על אילת השחר</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">א' של פסח ביום א' ג' ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">קיד</td><td className="p-2">בצאת ישראל</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שני של פסח בחו"ל</td><td className="p-2 border-l border-stone-800 text-center font-bold">עח</td><td className="p-2">משכיל לאסף האזינה</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">א' חול המועד פסח, ביום ב' ד' ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold">עח</td><td className="p-2">משכיל לאסף האזינה</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">א' חול המועד פסח, ביום א'</td><td className="p-2 border-l border-stone-800 text-center font-bold">קיד</td><td className="p-2">בצאת ישראל</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ב' חול המועד פסח, ביום ג' ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">פ</td><td className="p-2">למנצח אל שושנים</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ב' חול המועד פסח, ביום ב'</td><td className="p-2 border-l border-stone-800 text-center font-bold">עח</td><td className="p-2">משכיל לאסף האזינה</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ג' חול המועד פסח, ביום ד' ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold">קה</td><td className="p-2">הודו לה' קראו בשמו</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ג' חול המועד פסח, ביום א' ג'</td><td className="p-2 border-l border-stone-800 text-center font-bold">פ</td><td className="p-2">למנצח אל שושנים</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ד' חול המועד פסח, ביום ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">קלה</td><td className="p-2">הללויה הללו את שם ה'</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ד' חול המועד פסח, ביום ב' ד'</td><td className="p-2 border-l border-stone-800 text-center font-bold">קה</td><td className="p-2">הודו לה' קראו בשמו</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ה' חול המועד פסח, ביום ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold">סו</td><td className="p-2">למנצח שיר מזמור</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ה' חול המועד פסח, ביום א', ג', ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">קלה</td><td className="p-2">הללויה הללו את שם ה'</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שביעי של פסח ביום ב' ד' ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold">יח</td><td className="p-2">למנצח לעבד ה'</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">אחרון של פסח בחו"ל ביום ג' ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">קלו</td><td className="p-2">הוֹדוּ לה' כִּי-טוֹב</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">אחרון של פסח בחו"ל ביום א'</td><td className="p-2 border-l border-stone-800 text-center font-bold">יח</td><td className="p-2">למנצח לעבד ה'</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שבועות</td><td className="p-2 border-l border-stone-800 text-center font-bold">יט</td><td className="p-2">למנצח השמים מספרים</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שני של שבועות בחו"ל</td><td className="p-2 border-l border-stone-800 text-center font-bold">סח</td><td className="p-2">לַמְנַצֵחַ לְדָוִד, מִזְמוֹר שִׁיר</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">חג ראשון של סוכות ביום ב' ג' ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">עו</td><td className="p-2">למנצח בנגינות מזמור לאסף</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שני של סוכות בחו"ל</td><td className="p-2 border-l border-stone-800 text-center font-bold">מב</td><td className="p-2">לַמְנַצֵחַ, מַשְׂכִּיל לִבְנֵי-קֹרַח</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">א' חול המועד סוכות ביום א' ג' ד' ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold">כט</td><td className="p-2">מזמור לדוד הבו לה'</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ב' חול המועד סוכות ביום ב' ד' ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">נ</td><td className="p-2">מזמור לאסף אל אלוקים ה'</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ג' חול המועד סוכות ביום ג' ה' ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold text-xs whitespace-nowrap">צד, טז-כג</td><td className="p-2">מי יקום לי</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ג' חול המועד סוכות ביום א'</td><td className="p-2 border-l border-stone-800 text-center font-bold">נ</td><td className="p-2">מזמור לאסף אל אלוקים ה'</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ד' חול המועד סוכות ביום ד' ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold text-xs whitespace-nowrap">צד, א-טו</td><td className="p-2">אל נקמות ה'-עד כל ישרי לב</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ד' חול המועד סוכות ביום ב'</td><td className="p-2 border-l border-stone-800 text-center font-bold text-xs whitespace-nowrap">צד, טז-כג</td><td className="p-2">מי יקום לי</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ה' חול המועד סוכות ביום ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">פא</td><td className="p-2">למנצח על הגיתית</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">ה' חול המועד סוכות ביום א' ג'</td><td className="p-2 border-l border-stone-800 text-center font-bold text-xs whitespace-nowrap">צד, א-טו</td><td className="p-2">אל נקמות ה'-עד כל ישרי לב</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">הושענא רבא ביום ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold">פב</td><td className="p-2">מזמור לאסף אלוקים נצב</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">הושענא רבא ביום א' ב' ד'</td><td className="p-2 border-l border-stone-800 text-center font-bold">פא</td><td className="p-2">למנצח על הגיתית</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שמיני עצרת ביום ב' ג' ה'</td><td className="p-2 border-l border-stone-800 text-center font-bold">יב</td><td className="p-2">למנצח על השמינית</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שמחת תורה בחו"ל ביום ג', ד', ו'</td><td className="p-2 border-l border-stone-800 text-center font-bold">ח</td><td className="p-2">לַמְנַצֵחַ עַל-הַגִּתִּית</td></tr>
+                                        <tr className="border-b border-stone-800 hover:bg-stone-50"><td className="p-2 border-l border-stone-800">שמחת תורה בחו"ל ביום א'</td><td className="p-2 border-l border-stone-800 text-center font-bold">יב</td><td className="p-2">למנצח על השמינית</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -316,6 +333,7 @@
           const fetchEventsForDate = async () => {
             setLoadingEvents(true);
             setError(null);
+
             try {
               const dateObj = new Date(selectedDate);
               const year = dateObj.getFullYear();
@@ -331,20 +349,27 @@
               const convData = await converterRes.json();
 
               setHebrewDateStr(convData.hebrew);
-              setHebYear(convData.hy); setHebMonth(convData.hm); setHebDay(convData.hd);
+              setHebYear(convData.hy);
+              setHebMonth(convData.hm);
+              setHebDay(convData.hd);
 
               const daysEvents = data.items ? data.items.filter(item => item.date === selectedDate) : [];
               const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-              let gatheredEvents = [{ 
+              let gatheredEvents = [];
+              
+              gatheredEvents.push({ 
                   name: `יום ${hebrewDays[dayOfWeek]}`, 
                   chapter: REGULAR_DAYS[dayOfWeek].chapter,
                   num: REGULAR_DAYS[dayOfWeek].num,
                   isGraDefault: false 
-              }];
+              });
 
               const isShabbat = dayOfWeek === 6;
               const isRoshChodesh = daysEvents.some(e => e.title.includes('Rosh Chodesh'));
-              if (isRoshChodesh) gatheredEvents.push({ name: 'ראש חודש', chapter: 104, num: 'קד', isGraDefault: false });
+              
+              if (isRoshChodesh) {
+                  gatheredEvents.push({ name: 'ראש חודש', chapter: 104, num: 'קד', isGraDefault: false });
+              }
 
               let holidayPsalmResult = null;
               for (const event of daysEvents) {
@@ -355,7 +380,12 @@
                 }
               }
 
-              let winnerName = isRoshChodesh ? 'ראש חודש' : isShabbat ? 'יום שבת' : holidayPsalmResult ? holidayPsalmResult.reason : `יום ${hebrewDays[dayOfWeek]}`;
+              let winnerName = '';
+              if (isRoshChodesh) { winnerName = 'ראש חודש'; } 
+              else if (isShabbat) { winnerName = 'יום שבת'; } 
+              else if (holidayPsalmResult) { winnerName = holidayPsalmResult.reason; } 
+              else { winnerName = `יום ${hebrewDays[dayOfWeek]}`; }
+
               const defaultEv = gatheredEvents.find(e => e.name === winnerName);
               
               setEventsList(gatheredEvents);
@@ -497,7 +527,7 @@
                         </div>
                     </div>
                     <div className="w-full flex justify-center border-t border-stone-700 pt-4">
-                        <button onClick={() => setIsRulesModalOpen(true)} className="flex items-center gap-2 text-stone-400 hover:text-amber-400 transition-colors text-sm font-medium"><Info size={16} /> הצג את לוח הכללים (טבלת המקור)</button>
+                        <button onClick={() => setIsRulesModalOpen(true)} className="flex items-center gap-2 text-stone-400 hover:text-amber-400 transition-colors text-sm font-medium"><Info size={16} /> הצג את לוח הכללים השלם (כפי שמופיע בלוחות)</button>
                     </div>
                 </div>
               </footer>
@@ -513,7 +543,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('./sw.js')
                     .then(reg => console.log('Service Worker Registered!', reg))
                     .catch(err => console.error('Service Worker Registration Failed:', err));
             });
