@@ -4,32 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- תגיות PWA - חובה להתקנה -->
-    <link rel="manifest" href="manifest.json">
+    <!-- PWA Tags -->
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#f5f5f4">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="שיר של יום">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
 
     <title>שיר של יום - לפי מנהג הגר"א</title>
     
-    <!-- React & ReactDOM (UMD versions for browser) -->
+    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     
-    <!-- Babel (To compile JSX in the browser) -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts for typography -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .font-serif { font-family: 'Frank Ruhl Libre', serif; }
+        body.modal-open { overflow: hidden; }
     </style>
 </head>
 <body class="bg-stone-100 text-stone-900 overscroll-none">
@@ -39,19 +40,19 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Custom SVG Icons
+        // Custom SVG Icons (Lucide)
         const Calendar = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
         const MapPin = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
         const BookOpen = ({size=24, strokeWidth=2, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
         const Loader2 = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>;
         const AlertCircle = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         const Crown = ({size=24, strokeWidth=2, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.518l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>;
-        const Clock = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+        const ClockIcon = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
         const CalendarDays = ({size=24, className='', hidden}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={hidden ? {display: 'none'} : {}}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>;
         const ChevronRight = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>;
         const ChevronLeft = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>;
-        const Info = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
-        const X = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+        const InfoIcon = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
+        const XIcon = ({size=24, className=''}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
 
         const REGULAR_DAYS = {
           0: { num: 'כד', chapter: 24 },
@@ -82,7 +83,7 @@
 
         const SUKKOT_CHM_SEQ = [
           { num: 'כט', chapter: 29 }, { num: 'נ', chapter: 50 }, { num: 'צד (טז-כג)', chapter: '94.16-23' },
-          { num: 'צד (א-טו)', chapter: '94.1-15' }, { num: 'פא', chapter: 81 },
+          { num: 'צד (א-טו)', chapter: '94.1-15' }, { num: 'פא', chapter: 81 }, { num: 'פב', chapter: 82 }
         ];
 
         const getHebrewNumber = (num) => {
@@ -125,10 +126,17 @@
         };
 
         const getHolidayPsalm = (holidayName, dayOfWeek, isDiaspora) => {
+          // מנגנון סינון קשיח נגד כל מה שהוא "ערב" חג כדי למנוע קפיצות מוקדמות (כמו Erev Rosh Hashana)
           if (holidayName.includes('Erev')) return null;
 
           if (holidayName.includes('Rosh Hashana')) return { num: 'פא', chapter: 81, reason: 'ראש השנה' };
           if (holidayName.includes('Yom Kippur')) return { num: 'לב', chapter: 32, reason: 'יום כיפור' };
+          if (holidayName.includes('Purim')) return { num: 'כב', chapter: 22, reason: 'פורים' };
+          
+          if (holidayName.includes('Shavuot')) {
+             if (holidayName.includes('II') && isDiaspora) return { num: 'סח', chapter: 68, reason: 'שני של שבועות (חו"ל)' };
+             if (!holidayName.includes('II')) return { num: 'יט', chapter: 19, reason: 'שבועות' };
+          }
           
           if (holidayName.includes('Chanukah') && !holidayName.includes('Candle')) {
             const match = holidayName.match(/Day (\d+)/i) || holidayName.match(/(\d+)\w* Day/i);
@@ -136,10 +144,6 @@
             const hebLetters = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח'];
             return { num: 'ל', chapter: 30, reason: `${hebLetters[num]}' דחנוכה` };
           }
-          
-          if (holidayName.includes('Purim')) return { num: 'כב', chapter: 22, reason: 'פורים' };
-          if (holidayName === 'Shavuot I') return { num: 'יט', chapter: 19, reason: 'חג השבועות' };
-          if (holidayName === 'Shavuot II' && isDiaspora) return { num: 'סח', chapter: 68, reason: 'יום טוב שני של שבועות' };
           
           const romanToArabic = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8 };
           const hebLetters = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו'];
@@ -149,7 +153,10 @@
              if (match) {
                 const dayNum = romanToArabic[match[1]];
                 if (dayNum === 7) return { num: 'יח', chapter: 18, reason: 'שביעי של פסח' };
-                if (dayNum === 8 && isDiaspora) return { num: 'קלו', chapter: 136, reason: 'אחרון של פסח' };
+                if (dayNum === 8 && isDiaspora) {
+                    if (dayOfWeek === 0) return { num: 'יח', chapter: 18, reason: 'אחרון של פסח (חו"ל)' }; // יום א'
+                    return { num: 'קלו', chapter: 136, reason: 'אחרון של פסח (חו"ל)' };
+                }
 
                 if (dayNum >= 1 && dayNum <= 6) {
                    let validDaysCount = 0;
@@ -158,33 +165,48 @@
                      if (dow !== 6) validDaysCount++;
                    }
                    const psalmInfo = PESACH_SEQ[Math.max(0, validDaysCount - 1)];
-                   let reason = dayNum === 1 ? "א' של פסח" : (dayNum === 2 && isDiaspora) ? "ב' של פסח" : `${hebLetters[isDiaspora ? dayNum - 2 : dayNum - 1]}' דחול המועד פסח`;
+                   let reason = dayNum === 1 ? "א' של פסח" : (dayNum === 2 && isDiaspora) ? "ב' של פסח (חו\"ל)" : `${hebLetters[isDiaspora ? dayNum - 2 : dayNum - 1]}' דחוה"מ פסח`;
                    return { num: psalmInfo.num, chapter: psalmInfo.chapter, reason: reason };
                 }
              }
           }
 
-          if (holidayName === 'Hoshana Rabba') return { num: 'פב', chapter: 82, reason: 'הושענא רבה' };
-          if (holidayName === 'Shemini Atzeret') return { num: 'יב', chapter: 12, reason: 'שמיני עצרת' };
-          if (holidayName === 'Simchat Torah' && isDiaspora) return { num: 'ח', chapter: 8, reason: 'שמחת תורה' }; 
+          let isSukkot = holidayName.includes('Sukkot');
+          let isHoshanaRabba = holidayName.includes('Hoshana Rabba'); // תופס גם Rabbah
+          
+          if (isSukkot || isHoshanaRabba) {
+              let dayNum = 0;
+              if (isHoshanaRabba) {
+                  dayNum = 7;
+              } else {
+                  const match = holidayName.match(/Sukkot ([IVX]+)/);
+                  if (match) dayNum = romanToArabic[match[1]];
+              }
 
-          if (holidayName.includes('Sukkot')) {
-              const match = holidayName.match(/Sukkot ([IVX]+)/);
-              if (match) {
-                const dayNum = romanToArabic[match[1]];
-                if (dayNum === 1) return { num: 'עו', chapter: 76, reason: 'א\' של סוכות' };
-                if (dayNum >= 2 && dayNum <= 6) {
-                   let validChmDays = 0;
-                   for (let d = 2; d <= dayNum; d++) {
-                     const dow = (dayOfWeek - (dayNum - d) + 7) % 7;
-                     if (dow !== 6) validChmDays++;
-                   }
-                   const psalmInfo = SUKKOT_CHM_SEQ[Math.max(0, validChmDays - 1)];
-                   let reason = (dayNum === 2 && isDiaspora) ? "ב' של סוכות" : `${hebLetters[isDiaspora ? dayNum - 2 : dayNum - 1]}' דחול המועד סוכות`;
-                   return { num: psalmInfo.num, chapter: psalmInfo.chapter, reason: reason };
-                }
+              if (dayNum === 1) return { num: 'עו', chapter: 76, reason: 'א\' של סוכות' };
+              if (dayNum === 2 && isDiaspora) return { num: 'מב', chapter: 42, reason: 'ב\' של סוכות (חו"ל)' };
+
+              if (dayNum >= 2 && dayNum <= 7) {
+                 let validChmDays = 0;
+                 for (let d = 2; d <= dayNum; d++) {
+                   const dow = (dayOfWeek - (dayNum - d) + 7) % 7;
+                   if (dow !== 6) validChmDays++;
+                 }
+
+                 const seqIdx = Math.max(0, validChmDays - 1);
+                 const psalmInfo = SUKKOT_CHM_SEQ[seqIdx];
+
+                 let reason = isHoshanaRabba ? 'הושענא רבה' : `${hebLetters[isDiaspora ? dayNum - 2 : dayNum - 1]}' דחוה"מ סוכות`;
+                 return { num: psalmInfo.num, chapter: psalmInfo.chapter, reason: reason };
               }
           }
+
+          if (holidayName.includes('Atzeret')) return { num: 'יב', chapter: 12, reason: 'שמיני עצרת' };
+          if (holidayName.includes('Simchat Torah') && isDiaspora) {
+              if (dayOfWeek === 0) return { num: 'יב', chapter: 12, reason: 'שמחת תורה (חו"ל)' }; // יום א'
+              return { num: 'ח', chapter: 8, reason: 'שמחת תורה (חו"ל)' };
+          }
+
           return null;
         };
 
@@ -196,11 +218,11 @@
                         
                         <div className="flex justify-between items-center p-4 border-b border-stone-200 bg-stone-50 shrink-0">
                             <h2 className="text-xl font-bold text-stone-800 flex items-center gap-2">
-                                <Info size={20} className="text-amber-600" />
+                                <InfoIcon size={20} className="text-amber-600" />
                                 שיר של יום לפי מנהג הגר"א
                             </h2>
                             <button onClick={onClose} className="p-2 text-stone-500 hover:bg-stone-200 rounded-full transition-colors">
-                                <X size={20} />
+                                <XIcon size={20} />
                             </button>
                         </div>
                         
@@ -327,7 +349,7 @@
                 const newGreg = `${data.gy}-${String(data.gm).padStart(2, '0')}-${String(data.gd).padStart(2, '0')}`;
                 setSelectedDate(newGreg); 
               }
-            } catch (err) { console.error("Error", err); }
+            } catch (err) { console.error("שגיאה בהמרת תאריך עברי", err); }
           };
 
           const fetchEventsForDate = async () => {
@@ -344,7 +366,10 @@
               const hebcalUrl = `https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=${year}&month=${month}&d=${day}&c=off&geo=none&i=${isDiaspora ? 'off' : 'on'}`;
               const converterUrl = `https://www.hebcal.com/converter?cfg=json&date=${selectedDate}&g2h=1`;
               
-              const [hebcalRes, converterRes] = await Promise.all([fetch(hebcalUrl), fetch(converterUrl)]);
+              const [hebcalRes, converterRes] = await Promise.all([
+                  fetch(hebcalUrl), fetch(converterUrl)
+              ]);
+              
               const data = await hebcalRes.json();
               const convData = await converterRes.json();
 
@@ -353,7 +378,9 @@
               setHebMonth(convData.hm);
               setHebDay(convData.hd);
 
-              const daysEvents = data.items ? data.items.filter(item => item.date === selectedDate) : [];
+              const dateString = selectedDate; 
+              const daysEvents = data.items ? data.items.filter(item => item.date === dateString) : [];
+              
               const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
               let gatheredEvents = [];
               
@@ -368,7 +395,12 @@
               const isRoshChodesh = daysEvents.some(e => e.title.includes('Rosh Chodesh'));
               
               if (isRoshChodesh) {
-                  gatheredEvents.push({ name: 'ראש חודש', chapter: 104, num: 'קד', isGraDefault: false });
+                  gatheredEvents.push({ 
+                      name: 'ראש חודש', 
+                      chapter: 104, 
+                      num: 'קד', 
+                      isGraDefault: false 
+                  });
               }
 
               let holidayPsalmResult = null;
@@ -376,15 +408,25 @@
                 const hp = getHolidayPsalm(event.title, dayOfWeek, isDiaspora);
                 if (hp) {
                   holidayPsalmResult = hp;
-                  gatheredEvents.push({ name: hp.reason, chapter: hp.chapter, num: hp.num, isGraDefault: false });
+                  gatheredEvents.push({ 
+                      name: hp.reason, 
+                      chapter: hp.chapter, 
+                      num: hp.num, 
+                      isGraDefault: false 
+                  });
                 }
               }
 
               let winnerName = '';
-              if (isRoshChodesh) { winnerName = 'ראש חודש'; } 
-              else if (isShabbat) { winnerName = 'יום שבת'; } 
-              else if (holidayPsalmResult) { winnerName = holidayPsalmResult.reason; } 
-              else { winnerName = `יום ${hebrewDays[dayOfWeek]}`; }
+              if (isRoshChodesh) {
+                winnerName = 'ראש חודש';
+              } else if (isShabbat) {
+                winnerName = 'יום שבת';
+              } else if (holidayPsalmResult) {
+                winnerName = holidayPsalmResult.reason;
+              } else {
+                winnerName = `יום ${hebrewDays[dayOfWeek]}`;
+              }
 
               const defaultEv = gatheredEvents.find(e => e.name === winnerName);
               
@@ -395,8 +437,10 @@
               } else {
                   setActiveEvent(gatheredEvents[0]);
               }
+              
             } catch (err) {
-              setError('אירעה שגיאה בטעינת הנתונים מהשרת.');
+              console.error("Fetch Events Error:", err);
+              setError('אירעה שגיאה בטעינת הנתונים מהשרת. נסה שוב.');
             } finally {
               setLoadingEvents(false);
             }
@@ -414,33 +458,45 @@
                 const textArray = Array.isArray(sefariaData.he) ? sefariaData.he : [sefariaData.he];
                 if (textArray.length > 0) {
                     setPsalmText(textArray);
-                } else throw new Error('Empty text');
-              } else throw new Error('API Error');
+                } else {
+                    setError('לא נמצא טקסט עבור פרק זה בשרת.');
+                }
+              } else {
+                setError('שגיאה בקבלת הטקסט מ-Sefaria.');
+              }
             } catch(err) {
+              console.error("Fetch Psalm Error:", err);
               setError('אירעה שגיאה בטעינת פסוקי התהילים.');
             } finally {
               setLoadingText(false);
             }
           };
 
-          const createMarkup = (htmlString) => ({ __html: typeof htmlString === 'string' ? htmlString : '' });
+          const createMarkup = (htmlString) => {
+            return { __html: typeof htmlString === 'string' ? htmlString : '' };
+          };
 
           const getStartVerseOffset = () => {
               if (!activeEvent || !activeEvent.chapter || typeof activeEvent.chapter.toString !== 'function') return 0;
               const chapterStr = activeEvent.chapter.toString();
+              if (!chapterStr.includes('.')) return 0;
               const match = chapterStr.match(/\.(\d+)/);
               return match ? parseInt(match[1], 10) - 1 : 0;
           };
 
           return (
             <div className="min-h-screen bg-stone-100 font-sans text-right flex flex-col" dir="rtl">
+              
               <RulesModal isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
 
               <header className="bg-white shadow-sm border-b border-stone-200 py-6 px-4 shrink-0 text-center relative z-10">
                 <div className="max-w-4xl mx-auto flex flex-col items-center">
-                    <div className="flex justify-center mb-3 text-amber-700"><BookOpen size={36} strokeWidth={1.5} /></div>
+                    <div className="flex justify-center mb-3 text-amber-700">
+                        <BookOpen size={36} strokeWidth={1.5} />
+                    </div>
                     <h1 className="text-3xl font-bold text-stone-800 mb-2">שיר של יום</h1>
                     <p className="text-stone-500 mb-4 text-sm font-medium">לפי מנהג הגר"א מווילנא</p>
+                    
                     {hebrewDateStr && (
                         <div className="text-xl md:text-2xl font-serif text-amber-900 bg-amber-50 px-6 py-2 rounded-full border border-amber-200 shadow-sm inline-block">
                         {hebrewDateStr}
@@ -462,75 +518,180 @@
                     </div>
                   ) : activeEvent && (
                     <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-6 md:p-10 mb-8 animate-in fade-in duration-500">
+                      
                       <div className="flex flex-wrap justify-center gap-3 mb-10 border-b border-stone-100 pb-8">
                          {eventsList.map((ev, idx) => {
                             const isActive = activeEvent.name === ev.name;
                             return (
-                                <button key={idx} onClick={() => setActiveEvent(ev)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive ? 'bg-amber-100 text-amber-900 border-2 border-amber-400 shadow-sm' : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'}`}>
+                                <button 
+                                    key={idx} 
+                                    onClick={() => setActiveEvent(ev)}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                        isActive 
+                                            ? 'bg-amber-100 text-amber-900 border-2 border-amber-400 shadow-sm' 
+                                            : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+                                    }`}
+                                >
                                     {ev.name}
-                                    {ev.isGraDefault && <Crown size={16} strokeWidth={2.5} className={isActive ? "text-amber-600" : "text-stone-400"} title='פסיקת הגר"א ליום זה'/>}
+                                    {ev.isGraDefault && (
+                                        <Crown 
+                                            size={16} 
+                                            strokeWidth={2.5} 
+                                            className={isActive ? "text-amber-600" : "text-stone-400"} 
+                                            title='פסיקת הגר"א ליום זה'
+                                        />
+                                    )}
                                 </button>
                             )
                          })}
                       </div>
+
                       <div className="text-center mb-10">
-                        <h3 className="text-4xl md:text-5xl font-serif font-bold text-stone-800 tracking-tight">פרק {activeEvent.num}</h3>
+                        <h3 className="text-4xl md:text-5xl font-serif font-bold text-stone-800 tracking-tight">
+                          פרק {activeEvent.num}
+                        </h3>
                       </div>
+                      
                       <div className="text-xl md:text-2xl leading-relaxed md:leading-loose text-stone-800 font-serif pb-6">
                         {psalmText.map((verse, index) => {
+                          if (!verse) return null;
                           const absoluteVerseNum = getStartVerseOffset() + index + 1;
                           return (
                             <div key={index} className="mb-4 flex gap-4">
-                                <span className="text-stone-400 text-base select-none mt-2 w-8 text-left shrink-0 font-sans">{getHebrewVerseNumber(absoluteVerseNum)}</span>
+                                <span className="text-stone-400 text-base select-none mt-2 w-8 text-left shrink-0 font-sans">
+                                {getHebrewVerseNumber(absoluteVerseNum)}
+                                </span>
                                 <p dangerouslySetInnerHTML={createMarkup(verse)} className="flex-1" />
                             </div>
                           );
                         })}
                       </div>
+
                     </div>
                   )}
               </main>
 
               <footer className="bg-stone-800 text-stone-200 py-6 px-4 shrink-0 border-t-4 border-amber-600 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-10 md:pb-6">
                 <div className="max-w-5xl mx-auto flex flex-col items-center gap-6">
+                    
                     <div className="flex flex-col md:flex-row justify-center items-center gap-4 w-full">
-                        <button onClick={handleToday} className="flex items-center justify-center gap-2 bg-stone-700 hover:bg-stone-600 text-white px-5 py-2.5 rounded-lg text-sm transition-colors font-medium w-full md:w-auto shrink-0 shadow-sm"><Clock size={16} /> הצג את היום</button>
+                        <button 
+                          onClick={handleToday}
+                          className="flex items-center justify-center gap-2 bg-stone-700 hover:bg-stone-600 text-white px-5 py-2.5 rounded-lg text-sm transition-colors font-medium w-full md:w-auto shrink-0 shadow-sm"
+                        >
+                          <ClockIcon size={16} />
+                          הצג את היום
+                        </button>
+
                         <div className="h-8 w-px bg-stone-600 hidden md:block"></div>
+
                         <div className="flex bg-stone-900 p-1 rounded-lg w-full md:w-auto shrink-0">
-                          <button onClick={() => setDateMode('hebrew')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'hebrew' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}>עברי</button>
-                          <button onClick={() => setDateMode('gregorian')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'gregorian' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}>לועזי</button>
+                          <button 
+                            onClick={() => setDateMode('hebrew')} 
+                            className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'hebrew' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}
+                          >
+                            עברי
+                          </button>
+                          <button 
+                            onClick={() => setDateMode('gregorian')} 
+                            className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm transition-all ${dateMode === 'gregorian' ? 'bg-stone-700 font-medium text-white shadow-sm' : 'text-stone-400 hover:text-stone-300'}`}
+                          >
+                            לועזי
+                          </button>
                         </div>
+
                         <div className="flex items-center gap-1 w-full md:w-auto">
-                            <button onClick={() => adjustDay(-1)} className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0" title="יום קודם"><ChevronRight size={18} /></button>
+                            <button 
+                                onClick={() => adjustDay(-1)} 
+                                className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0"
+                                title="יום קודם"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+
                             {dateMode === 'gregorian' ? (
                               <div className="flex items-center gap-2 bg-stone-700 px-4 py-2 rounded-lg w-full md:w-auto shadow-sm">
                                 <Calendar className="text-stone-400 shrink-0" size={18} />
-                                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent text-white outline-none w-full color-scheme-dark" style={{ colorScheme: 'dark' }}/>
+                                <input 
+                                  type="date" 
+                                  value={selectedDate}
+                                  onChange={(e) => setSelectedDate(e.target.value)}
+                                  className="bg-transparent text-white outline-none w-full color-scheme-dark"
+                                  style={{ colorScheme: 'dark' }}
+                                />
                               </div>
                             ) : (
                               <div className="flex items-center gap-2 bg-stone-700 px-2 py-2 rounded-lg text-white w-full justify-center shadow-sm flex-1 md:flex-none h-10 min-w-0">
                                  <CalendarDays className="text-stone-400 shrink-0 hidden md:block" size={18} />
-                                 <select value={hebDay} onChange={e => handleHebrewDateChange(hebYear, hebMonth, Number(e.target.value))} className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate">{[...Array(30).keys()].map(i => <option key={i+1} value={i+1} className="bg-stone-800">{getHebrewNumber(i+1)}</option>)}</select>
+                                 <select 
+                                    value={hebDay} 
+                                    onChange={e => handleHebrewDateChange(hebYear, hebMonth, Number(e.target.value))} 
+                                    className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate"
+                                 >
+                                   {[...Array(30).keys()].map(i => <option key={i+1} value={i+1} className="bg-stone-800">{getHebrewNumber(i+1)}</option>)}
+                                 </select>
                                  <span className="text-stone-500 shrink-0">/</span>
-                                 <select value={hebMonth} onChange={e => handleHebrewDateChange(hebYear, e.target.value, hebDay)} className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate">{HEBREW_MONTHS.map(m => <option key={m.en} value={m.en} className="bg-stone-800">{m.he}</option>)}</select>
+                                 <select 
+                                    value={hebMonth} 
+                                    onChange={e => handleHebrewDateChange(hebYear, e.target.value, hebDay)} 
+                                    className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate"
+                                 >
+                                   {HEBREW_MONTHS.map(m => <option key={m.en} value={m.en} className="bg-stone-800">{m.he}</option>)}
+                                 </select>
                                  <span className="text-stone-500 shrink-0">/</span>
-                                 <select value={hebYear} onChange={e => handleHebrewDateChange(Number(e.target.value), hebMonth, hebDay)} className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate">{YEARS_LIST.map(y => <option key={y} value={y} className="bg-stone-800">{getHebrewYearString(y)}</option>)}</select>
+                                 <select 
+                                    value={hebYear} 
+                                    onChange={e => handleHebrewDateChange(Number(e.target.value), hebMonth, hebDay)} 
+                                    className="bg-transparent outline-none cursor-pointer p-0 md:p-1 appearance-none text-center hover:bg-stone-600 rounded flex-1 truncate"
+                                 >
+                                    {YEARS_LIST.map(y => (
+                                      <option key={y} value={y} className="bg-stone-800">{getHebrewYearString(y)}</option>
+                                    ))}
+                                 </select>
                               </div>
                             )}
-                            <button onClick={() => adjustDay(1)} className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0" title="יום הבא"><ChevronLeft size={18} /></button>
+
+                            <button 
+                                onClick={() => adjustDay(1)} 
+                                className="bg-stone-700 hover:bg-stone-600 p-2.5 rounded-lg transition-colors text-stone-300 hover:text-white shrink-0"
+                                title="יום הבא"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
                         </div>
+                        
                         <div className="h-8 w-px bg-stone-600 hidden md:block"></div>
+
                         <div className="flex items-center gap-1 bg-stone-900 p-1 rounded-lg w-full md:w-auto shrink-0 shadow-sm">
-                          <button onClick={() => setIsDiaspora(false)} className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${!isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}><MapPin size={16} /> בארץ</button>
-                          <button onClick={() => setIsDiaspora(true)} className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}>בחו"ל</button>
+                          <button
+                            onClick={() => setIsDiaspora(false)}
+                            className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${!isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}
+                          >
+                            <MapPin size={16} />
+                            בארץ
+                          </button>
+                          <button
+                            onClick={() => setIsDiaspora(true)}
+                            className={`flex-1 md:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-md transition-colors text-sm ${isDiaspora ? 'bg-amber-600 text-white font-medium' : 'text-stone-400 hover:bg-stone-800'}`}
+                          >
+                            בחו"ל
+                          </button>
                         </div>
                     </div>
+
                     <div className="w-full flex justify-center border-t border-stone-700 pt-4">
-                        <button onClick={() => setIsRulesModalOpen(true)} className="flex items-center gap-2 text-stone-400 hover:text-amber-400 transition-colors text-sm font-medium"><Info size={16} /> הצג את לוח הכללים השלם (כפי שמופיע בלוחות)</button>
+                        <button 
+                            onClick={() => setIsRulesModalOpen(true)}
+                            className="flex items-center gap-2 text-stone-400 hover:text-amber-400 transition-colors text-sm font-medium"
+                        >
+                            <InfoIcon size={16} />
+                            הצג את לוח הכללים השלם (כפי שמופיע בלוחות)
+                        </button>
                     </div>
+                    
                 </div>
               </footer>
+
             </div>
           );
         }
@@ -539,13 +700,12 @@
         root.render(<App />);
     </script>
     
-    <!-- PWA Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Registered!', reg))
-                    .catch(err => console.error('Service Worker Registration Failed:', err));
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.error('SW Failed:', err));
             });
         }
     </script>
