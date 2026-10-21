@@ -23,8 +23,9 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // מוחק כל זיכרון ישן שאינו הגרסה הנוכחית (v2)
-          if (cacheName !== CACHE_NAME) {
+          // מוחק כל זיכרון ישן של האפליקציה הזו שאינו הגרסה הנוכחית (v2)
+          // הזיכרון משותף לכל האפליקציות ב-itaigree.github.io, לכן לא נוגעים בזיכרון של אפליקציות אחרות
+          if (cacheName.startsWith('shir-shel-yom-cache-') && cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
