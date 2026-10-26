@@ -53,9 +53,10 @@ const ABROAD_ROWS = [
   [TISHREI, 20, [SUN, TUE], 94], [TISHREI, 20, [THU], 81],
   [TISHREI, 21, [SUN, MON, WED], 81], [TISHREI, 21, [FRI], 82],
   [TISHREI, 23, [TUE, WED, FRI], 8], [TISHREI, 23, [SUN], 12],
-  // Pesach is the same as in Israel: after a Shabbat first day, the second day (Sunday) says 114, then 78
+  // Pesach is the same as in Israel: after a Shabbat first day, the second day (Sunday) says 114, then 78.
+  // The 8th day says 138, or 18 on a Sunday, when the 7th day was Shabbat (Koren Siddur)
   [NISAN, 16, [MON, WED, FRI], 78], [NISAN, 16, [SUN], 114],
-  [NISAN, 22, [TUE, THU], 136], [NISAN, 22, [SUN], 18],
+  [NISAN, 22, [TUE, THU], 138], [NISAN, 22, [SUN], 18],
   [SIVAN, 7, ALL, 68],
 ];
 

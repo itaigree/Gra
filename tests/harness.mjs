@@ -21,7 +21,7 @@ export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export const VERSE_COUNTS = {
   8: 10, 12: 9, 18: 51, 19: 15, 22: 32, 24: 10, 29: 11, 30: 13, 32: 11, 42: 12, 48: 15, 50: 23,
   66: 20, 68: 36, 76: 13, 78: 72, 80: 20, 81: 17, 82: 8, 92: 16, 93: 5, 94: 23, 104: 35,
-  105: 45, 114: 8, 135: 21, 136: 26,
+  105: 45, 114: 8, 135: 21, 136: 26, 138: 8,
 };
 
 export function startServer() {

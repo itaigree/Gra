@@ -76,6 +76,12 @@ test('Sukkot abroad: Chol HaMoed starts with 29 and says all of Psalm 94 on one 
   assert.equal(getHolidayPsalm('Sukkot II', 0, true).reason, 'ב\' של סוכות (חו"ל)');
 });
 
+test('the 8th day of Pesach abroad', () => {
+  assert.deepEqual(getHolidayPsalm('Pesach VIII', 2, true), { num: 'קלח', chapter: 138, reason: 'אחרון של פסח (חו"ל)' });
+  assert.equal(getHolidayPsalm('Pesach VIII', 4, true).chapter, 138);
+  assert.equal(getHolidayPsalm('Pesach VIII', 0, true).chapter, 18); // the 7th day was Shabbat
+});
+
 test('Shavuot, Shmini Atzeret and Simchat Torah', () => {
   assert.equal(getHolidayPsalm('Shavuot', 0, false).chapter, 19);
   assert.equal(getHolidayPsalm('Shavuot I', 0, true).chapter, 19);

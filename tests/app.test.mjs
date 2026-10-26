@@ -691,3 +691,15 @@ test('Sukkot abroad: all of Psalm 94 on one day', async () => {
   assert.equal(screen.verses[0].num, 'א');
   await context.close();
 });
+
+test('the 8th day of Pesach abroad', async () => {
+  // 5787: Pesach VIII is Thursday 29 Apr 2027
+  const { page, context } = await open({ now: '2027-04-29T09:00:00+03:00' });
+  let screen = await readScreen(page);
+  assert.deepEqual(chipNames(screen), ['יום חמישי']); // an ordinary day in Israel
+  await page.getByRole('button', { name: 'בחו"ל' }).click();
+  screen = await waitForScreen(page, s => crowned(s)[0] === 'אחרון של פסח (חו"ל)' && s.verses.length > 0);
+  assert.equal(screen.heading, 'פרק קלח');
+  assert.equal(screen.verses.length, VERSE_COUNTS[138]);
+  await context.close();
+});

@@ -152,7 +152,7 @@
           if (dayNum === 7) return { num: 'יח', chapter: 18, reason: 'שביעי של פסח' };
           if (dayNum === 8 && isDiaspora) {
               if (dayOfWeek === 0) return { num: 'יח', chapter: 18, reason: 'אחרון של פסח (חו"ל)' }; // יום א'
-              return { num: 'קלו', chapter: 136, reason: 'אחרון של פסח (חו"ל)' };
+              return { num: 'קלח', chapter: 138, reason: 'אחרון של פסח (חו"ל)' };
           }
 
           if (dayNum >= 1 && dayNum <= 6) {
