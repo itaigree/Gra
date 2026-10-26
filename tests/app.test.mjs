@@ -15,6 +15,8 @@ const nextDay = (page) => page.locator('button[title="יום הבא"]').click();
 const prevDay = (page) => page.locator('button[title="יום קודם"]').click();
 const showGregorian = (page) => page.getByRole('button', { name: 'לועזי' }).click();
 const hebrewSelect = (page, i) => page.locator('footer select').nth(i);
+const applyButton = (page) => page.getByRole('button', { name: 'הצג את התאריך שנבחר', exact: true });
+const applyDate = (page) => applyButton(page).click();
 const isHebrewDate = (screen, day, year) => screen.hebrewDate.startsWith(`${day} `) && screen.hebrewDate.endsWith(` ${year}`);
 // A snapshot without waiting for loading to finish
 const glance = (page) => page.evaluate(() => ({
@@ -222,12 +224,14 @@ test('the Hebrew date pickers show the loaded date, including Shvat and Adar', a
   assert.ok(months.includes("אדר א'") && months.includes("אדר ב'") && !months.includes('אדר'), months.join());
 
   await hebrewSelect(page, 0).selectOption('14');
-  await waitForScreen(page, s => s.hebrewSelects[0].label === 'י״ד' && s.hebrewDate.startsWith('י״ד'));
   await hebrewSelect(page, 1).selectOption('Adar II'); // Purim of a leap year
+  await applyDate(page);
   screen = await waitForScreen(page, s => crowned(s)[0] === 'פורים');
   assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['י״ד', "אדר ב'", 'ה׳ תשפ״ז']);
 
   await hebrewSelect(page, 2).selectOption('5788'); // a regular year has a single Adar
+  assert.equal((await readScreen(page)).hebrewSelects[1].label, 'אדר');
+  await applyDate(page);
   screen = await waitForScreen(page, s => isHebrewDate(s, 'י״ד', 'תשפ״ח') && crowned(s)[0] === 'פורים');
   assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['י״ד', 'אדר', 'ה׳ תשפ״ח']);
   // the app asks for "Adar" itself rather than relying on the server to understand "Adar II" in a regular year
@@ -369,14 +373,17 @@ test('Hebrew date picks: the last choice wins, even when an earlier conversion i
     delay: url => (url.includes('h2g=1') && [1, 3].includes(++conversions) ? 1500 : 0),
   });
   await readScreen(page);
-  await hebrewSelect(page, 0).selectOption('20'); // slow
+  await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page); // slow
   await hebrewSelect(page, 0).selectOption('22');
+  await applyDate(page);
   await page.waitForTimeout(2000);
   let screen = await readScreen(page);
   assert.equal(screen.hebrewSelects[0].label, 'כ״ב');
   assert.ok(screen.hebrewDate.startsWith('כ״ב'), screen.hebrewDate);
 
-  await hebrewSelect(page, 0).selectOption('25'); // slow, then the user goes back to today
+  await hebrewSelect(page, 0).selectOption('25');
+  await applyDate(page); // slow, and then the user goes back to today
   await page.getByRole('button', { name: 'הצג את היום' }).click();
   await page.waitForTimeout(2000);
   screen = await readScreen(page);
@@ -393,6 +400,7 @@ test('a failed Hebrew date conversion puts the pickers back on the date shown', 
   const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', fail: url => (url.includes('h2g=1') ? 'abort' : false) });
   const before = (await readScreen(page)).hebrewSelects.map(s => s.label);
   await hebrewSelect(page, 1).selectOption('Nisan');
+  await applyDate(page);
   const screen = await waitForScreen(page, s => s.hebrewSelects[1].label === before[1]);
   assert.deepEqual(screen.hebrewSelects.map(s => s.label), before);
   assert.deepEqual(crowned(screen), ['יום ראשון']);
@@ -592,6 +600,7 @@ test('"today" while a Hebrew date pick is on its way puts the pickers back, even
   });
   await readScreen(page);
   await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page);
   await page.getByRole('button', { name: 'הצג את היום' }).click();
   await page.waitForTimeout(2000);
   const screen = await readScreen(page);
@@ -604,6 +613,7 @@ test('a failed Hebrew date pick does not stop "today" from following the clock',
   const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', fail: url => (url.includes('h2g=1') ? 'abort' : false) });
   await readScreen(page);
   await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page);
   await waitForScreen(page, s => s.hebrewSelects[0].label === 'י״ד');
   await page.clock.setFixedTime(new Date('2026-10-26T07:00:00+02:00'));
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -616,6 +626,7 @@ test('moving from the 30th to a month of 29 days lands on its last day', async (
   let screen = await readScreen(page);
   assert.equal(screen.hebrewSelects[0].label, 'ל׳');
   await hebrewSelect(page, 1).selectOption('Tevet'); // Tevet has 29 days
+  await applyDate(page);
   screen = await waitForScreen(page, s => isHebrewDate(s, 'כ״ט', 'תשפ״ז'));
   assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['כ״ט', 'טבת', 'ה׳ תשפ״ז']);
   await context.close();
@@ -659,7 +670,7 @@ test('typing a year in the Gregorian field does not load the years on the way', 
   await page.locator('footer input[type=date]').fill('0202-10-25');
   await page.waitForTimeout(500);
   assert.ok(!apiRequests.some(u => u.includes('year=202&')), apiRequests.join('\n'));
-  assert.equal((await readScreen(page)).gregorianInput, '2026-10-25');
+  assert.equal(await applyButton(page).isDisabled(), true);
   await context.close();
 });
 
@@ -701,5 +712,97 @@ test('the 8th day of Pesach abroad', async () => {
   screen = await waitForScreen(page, s => crowned(s)[0] === 'אחרון של פסח (חו"ל)' && s.verses.length > 0);
   assert.equal(screen.heading, 'פרק קלח');
   assert.equal(screen.verses.length, VERSE_COUNTS[138]);
+  await context.close();
+});
+
+test('choosing a Hebrew date changes nothing until "הצג" is pressed', async () => {
+  const { page, context, apiRequests } = await open({ now: '2026-10-25T09:00:00+02:00' }); // Sunday 14 Cheshvan 5787
+  let screen = await readScreen(page);
+  assert.equal(await applyButton(page).isDisabled(), true);
+  const requestsBefore = apiRequests.length;
+
+  await hebrewSelect(page, 0).selectOption('20');
+  await hebrewSelect(page, 1).selectOption('Kislev');
+  await hebrewSelect(page, 2).selectOption('5788');
+  await page.waitForTimeout(500);
+  screen = await readScreen(page);
+  assert.equal(apiRequests.length, requestsBefore); // nothing was loaded
+  assert.ok(isHebrewDate(screen, 'י״ד', 'תשפ״ז'), screen.hebrewDate); // still showing today
+  assert.deepEqual(crowned(screen), ['יום ראשון']);
+  assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['כ׳', 'כסלו', 'ה׳ תשפ״ח']);
+  assert.equal(await applyButton(page).isDisabled(), false);
+
+  await applyDate(page);
+  screen = await waitForScreen(page, s => isHebrewDate(s, 'כ׳', 'תשפ״ח') && s.verses.length > 0);
+  assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['כ׳', 'כסלו', 'ה׳ תשפ״ח']);
+  assert.equal(await applyButton(page).isDisabled(), true);
+
+  // choosing the date that is already shown leaves nothing to show
+  await hebrewSelect(page, 0).selectOption('21');
+  assert.equal(await applyButton(page).isDisabled(), false);
+  await hebrewSelect(page, 0).selectOption('20');
+  assert.equal(await applyButton(page).isDisabled(), true);
+  await context.close();
+});
+
+test('the arrows move from the date shown and drop a date chosen but not shown', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' }); // 14 Cheshvan 5787
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('20');
+  await nextDay(page);
+  const screen = await waitForScreen(page, s => isHebrewDate(s, 'ט״ו', 'תשפ״ז') && s.verses.length > 0);
+  assert.equal(screen.hebrewSelects[0].label, 'ט״ו');
+  assert.equal(await applyButton(page).isDisabled(), true);
+  await context.close();
+});
+
+test('a Gregorian date is shown only when "הצג" is pressed', async () => {
+  const { page, context, apiRequests } = await open({ now: '2026-10-25T09:00:00+02:00' });
+  await readScreen(page);
+  await showGregorian(page);
+  const requestsBefore = apiRequests.length;
+  await page.locator('footer input[type=date]').fill('2026-12-06'); // Chanukah, day 2
+  await page.waitForTimeout(500);
+  assert.equal(apiRequests.length, requestsBefore);
+  assert.deepEqual(crowned(await readScreen(page)), ['יום ראשון']);
+  await applyDate(page);
+  const screen = await waitForScreen(page, s => crowned(s)[0] === "ב' דחנוכה" && s.verses.length > 0);
+  assert.equal(screen.gregorianInput, '2026-12-06');
+  assert.equal(await applyButton(page).isDisabled(), true);
+  await context.close();
+});
+
+const isDark = (page) => page.evaluate(() => document.documentElement.classList.contains('dark'));
+const themeColor = (page) => page.evaluate(() => document.querySelector('meta[name="theme-color"]').content);
+
+test('dark mode follows the device, and the choice made in the app is remembered', async () => {
+  let { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', colorScheme: 'dark' });
+  await readScreen(page);
+  assert.equal(await isDark(page), true);
+  assert.equal(await themeColor(page), '#1c1917');
+
+  const toggle = page.getByRole('button', { name: 'מצב כהה', exact: true });
+  assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+  await toggle.click();
+  assert.equal(await isDark(page), false);
+  assert.equal(await themeColor(page), '#f5f5f4');
+  await page.reload();
+  await readScreen(page);
+  assert.equal(await isDark(page), false); // the choice wins over the device setting
+  await context.close();
+
+  ({ page, context } = await open({ now: '2026-10-25T09:00:00+02:00', colorScheme: 'light' }));
+  await readScreen(page);
+  assert.equal(await isDark(page), false);
+  await page.emulateMedia({ colorScheme: 'dark' }); // no choice made: follows the device as it changes
+  await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
+  await context.close();
+});
+
+test('dark mode is on before the app has even started', async () => {
+  // the app never starts here, so only the early script in <head> can have set it
+  const { page, context } = await open({ colorScheme: 'dark', fail: url => (url.endsWith('/gra-logic.js') ? '404' : false) });
+  assert.equal(await isDark(page), true);
+  assert.equal(await themeColor(page), '#1c1917');
   await context.close();
 });

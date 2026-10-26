@@ -65,10 +65,11 @@ const nodeModule = (p) => path.join(REPO, 'node_modules', p);
  *                '404' (for the app's own files) | falsy
  *   serviceWorkers  'block' (default) or 'allow' to run sw.js
  *   fakeTimers   install a controllable clock (page.clock.fastForward) instead of only freezing the time
+ *   colorScheme  'light' (default) or 'dark' device setting
  * Returns { context, page, errors, apiRequests, setOffline(bool) }; offline fails every request, local ones too.
  */
-export async function openApp(browser, appUrl, { timezoneId = 'Asia/Jerusalem', now, delay = () => 0, fail = () => false, serviceWorkers = 'block', fakeTimers = false } = {}) {
-  const context = await browser.newContext({ timezoneId, serviceWorkers, viewport: { width: 400, height: 900 } });
+export async function openApp(browser, appUrl, { timezoneId = 'Asia/Jerusalem', now, delay = () => 0, fail = () => false, serviceWorkers = 'block', fakeTimers = false, colorScheme = 'light' } = {}) {
+  const context = await browser.newContext({ timezoneId, serviceWorkers, colorScheme, viewport: { width: 400, height: 900 } });
   const errors = [];
   const apiRequests = [];
   let offline = false;
