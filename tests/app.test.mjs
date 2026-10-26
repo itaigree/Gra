@@ -736,6 +736,9 @@ test('choosing a Hebrew date changes nothing until "הצג" is pressed', async (
   let screen = await readScreen(page);
   assert.equal(await applyEnabled(page), false);
   const requestsBefore = apiRequests.length;
+  await applyButton(page).click({ force: true }); // the dimmed button does nothing
+  await page.waitForTimeout(300);
+  assert.equal(apiRequests.length, requestsBefore);
 
   await hebrewSelect(page, 0).selectOption('20');
   await hebrewSelect(page, 1).selectOption('Kislev');
