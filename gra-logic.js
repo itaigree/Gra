@@ -30,6 +30,12 @@
     { num: 'צד (א-טו)', chapter: '94.1-15' }, { num: 'פא', chapter: 81 }, { num: 'פב', chapter: 82 }
   ];
 
+  // בחו"ל יש יום אחד פחות של חול המועד, ולכן מזמור צד נאמר כולו ביום אחד (מדריך להלכות תפילה, סידור קורן)
+  const SUKKOT_CHM_SEQ_DIASPORA = [
+    { num: 'כט', chapter: 29 }, { num: 'נ', chapter: 50 }, { num: 'צד', chapter: 94 },
+    { num: 'פא', chapter: 81 }, { num: 'פב', chapter: 82 }
+  ];
+
   const getHebrewNumber = (num) => {
     if (!num) return '';
     if (num === 15) return 'ט״ו';
@@ -176,16 +182,22 @@
         }
 
         if (dayNum === 1) return { num: 'עו', chapter: 76, reason: 'א\' של סוכות' };
-        if (dayNum === 2 && isDiaspora) return { num: 'מב', chapter: 42, reason: 'ב\' של סוכות (חו"ל)' };
+        if (dayNum === 2 && isDiaspora) {
+            // כשיום טוב ראשון חל בשבת, אומרים ביום טוב שני את המזמור שנדחה ממנו
+            if (dayOfWeek === 0) return { num: 'עו', chapter: 76, reason: 'ב\' של סוכות (חו"ל)' };
+            return { num: 'מב', chapter: 42, reason: 'ב\' של סוכות (חו"ל)' };
+        }
 
         if (dayNum >= 2 && dayNum <= 7) {
+           // חול המועד מתחיל ב-ט"ז בתשרי בארץ וב-י"ז בחו"ל; אם חלה בו שבת, המזמור האחרון לא נאמר
+           const firstDay = isDiaspora ? 3 : 2;
            let saidBefore = 0;
-           for (let d = 2; d < dayNum; d++) {
+           for (let d = firstDay; d < dayNum; d++) {
              const dow = (dayOfWeek - (dayNum - d) + 7) % 7;
              if (dow !== 6) saidBefore++;
            }
 
-           const psalmInfo = SUKKOT_CHM_SEQ[saidBefore];
+           const psalmInfo = (isDiaspora ? SUKKOT_CHM_SEQ_DIASPORA : SUKKOT_CHM_SEQ)[saidBefore];
 
            let reason = isHoshanaRabba ? 'הושענא רבה' : `${hebLetters[isDiaspora ? dayNum - 2 : dayNum - 1]}' דחוה"מ סוכות`;
            return { num: psalmInfo.num, chapter: psalmInfo.chapter, reason: reason };
@@ -243,7 +255,7 @@
   };
 
   return {
-    REGULAR_DAYS, HEBREW_DAY_NAMES, ROSH_CHODESH, PESACH_SEQ, SUKKOT_CHM_SEQ,
+    REGULAR_DAYS, HEBREW_DAY_NAMES, ROSH_CHODESH, PESACH_SEQ, SUKKOT_CHM_SEQ, SUKKOT_CHM_SEQ_DIASPORA,
     getHebrewNumber, getHebrewVerseNumber, getHebrewYearString, isHebrewLeapYear,
     parseDateStr, formatDateStr, getDayOfWeek, addDays, getTodayDateStr,
     getHolidayPsalm, getDayPsalms,

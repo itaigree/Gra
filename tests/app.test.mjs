@@ -662,3 +662,32 @@ test('typing a year in the Gregorian field does not load the years on the way', 
   assert.equal((await readScreen(page)).gregorianInput, '2026-10-25');
   await context.close();
 });
+
+test('Sukkot abroad when the festival starts on Shabbat', async () => {
+  // 5787: 15 Tishrei is Shabbat 26 Sep 2026, Hoshana Raba is Friday 2 Oct
+  const { page, context } = await open({ now: '2026-09-27T09:00:00+03:00' });
+  await readScreen(page);
+  await page.getByRole('button', { name: 'בחו"ל' }).click();
+  let screen = await waitForScreen(page, s => crowned(s)[0] === 'ב\' של סוכות (חו"ל)');
+  assert.equal(screen.heading, 'פרק עו'); // the first day's psalm, pushed from Shabbat
+  const days = [['א\' דחוה"מ סוכות', 'פרק כט'], ['ב\' דחוה"מ סוכות', 'פרק נ'], ['ג\' דחוה"מ סוכות', 'פרק צד'],
+    ['ד\' דחוה"מ סוכות', 'פרק פא'], ['הושענא רבה', 'פרק פב']];
+  for (const [chip, heading] of days) {
+    await nextDay(page);
+    screen = await waitForScreen(page, s => crowned(s)[0] === chip && s.verses.length > 0);
+    assert.equal(screen.heading, heading, chip);
+  }
+  await context.close();
+});
+
+test('Sukkot abroad: all of Psalm 94 on one day', async () => {
+  // 5787 abroad: 19 Tishrei (Wed 30 Sep 2026)
+  const { page, context } = await open({ now: '2026-09-30T09:00:00+03:00' });
+  await readScreen(page);
+  await page.getByRole('button', { name: 'בחו"ל' }).click();
+  const screen = await waitForScreen(page, s => crowned(s)[0] === 'ג\' דחוה"מ סוכות' && s.verses.length > 0);
+  assert.equal(screen.heading, 'פרק צד');
+  assert.equal(screen.verses.length, VERSE_COUNTS[94]);
+  assert.equal(screen.verses[0].num, 'א');
+  await context.close();
+});

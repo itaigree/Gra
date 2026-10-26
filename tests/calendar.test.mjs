@@ -43,10 +43,17 @@ const ISRAEL_ROWS = [
   [SIVAN, 6, ALL, 19],
 ];
 const ABROAD_ROWS = [
-  [TISHREI, 16, ALL, 42],
+  // Sukkot abroad (Koren Siddur, מדריך להלכות תפילה): Chol HaMoed starts on 17 Tishrei with 29, Psalm 94 is said whole
+  // on one day, 82 only when no Shabbat falls in Chol HaMoed (Hoshana Raba on Friday); when the first day is Shabbat
+  // the second day says the displaced 76
+  [TISHREI, 16, [TUE, WED, FRI], 42], [TISHREI, 16, [SUN], 76],
+  [TISHREI, 17, [MON, WED, THU], 29],
+  [TISHREI, 18, [TUE, THU, FRI], 50], [TISHREI, 18, [SUN], 29],
+  [TISHREI, 19, [WED, FRI], 94], [TISHREI, 19, [MON], 50],
+  [TISHREI, 20, [SUN, TUE], 94], [TISHREI, 20, [THU], 81],
+  [TISHREI, 21, [SUN, MON, WED], 81], [TISHREI, 21, [FRI], 82],
   [TISHREI, 23, [TUE, WED, FRI], 8], [TISHREI, 23, [SUN], 12],
-  // the table gives 78 for the second day abroad without a weekday; after a Shabbat first day the app (like the Israeli
-  // row for 16 Nisan on Sunday) says the displaced 114, and 78 the next day. Left for the author to confirm.
+  // Pesach is the same as in Israel: after a Shabbat first day, the second day (Sunday) says 114, then 78
   [NISAN, 16, [MON, WED, FRI], 78], [NISAN, 16, [SUN], 114],
   [NISAN, 22, [TUE, THU], 136], [NISAN, 22, [SUN], 18],
   [SIVAN, 7, ALL, 68],

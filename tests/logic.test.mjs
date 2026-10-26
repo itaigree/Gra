@@ -63,6 +63,19 @@ test('Shushan Purim is offered, but never chosen as the default', () => {
   assert.equal(defaultEvent.chapter, 94);
 });
 
+test('Sukkot abroad: Chol HaMoed starts with 29 and says all of Psalm 94 on one day', () => {
+  // 5788: 15 Tishrei on Thursday, so 17 Tishrei is Shabbat
+  const days = [['Sukkot III (CH’’M)', 6], ['Sukkot IV (CH’’M)', 0], ['Sukkot V (CH’’M)', 1], ['Sukkot VI (CH’’M)', 2], ['Sukkot VII (Hoshana Raba)', 3]];
+  assert.deepEqual(days.map(([title, dow]) => getHolidayPsalm(title, dow, true).chapter), [29, 29, 50, 94, 81]);
+  assert.equal(getHolidayPsalm('Sukkot VI (CH’’M)', 2, true).num, 'צד');
+  // in Israel the same days keep the two halves of 94
+  assert.equal(getHolidayPsalm('Sukkot VI (CH’’M)', 2, false).chapter, '94.1-15');
+  // second day abroad: 42, or the displaced 76 when the first day was Shabbat
+  assert.equal(getHolidayPsalm('Sukkot II', 5, true).chapter, 42);
+  assert.equal(getHolidayPsalm('Sukkot II', 0, true).chapter, 76);
+  assert.equal(getHolidayPsalm('Sukkot II', 0, true).reason, 'ב\' של סוכות (חו"ל)');
+});
+
 test('Shavuot, Shmini Atzeret and Simchat Torah', () => {
   assert.equal(getHolidayPsalm('Shavuot', 0, false).chapter, 19);
   assert.equal(getHolidayPsalm('Shavuot I', 0, true).chapter, 19);
