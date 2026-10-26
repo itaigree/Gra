@@ -4,7 +4,8 @@
 //   hebcal.com/converter  -> @hebcal/core HDate
 //   sefaria.org/api/texts -> placeholder verses ("תהלים <chapter> פסוק <verse>") with the real verse counts
 //   unpkg.com             -> react, react-dom and @babel/standalone from node_modules
-//   tailwind, google fonts -> empty stubs
+//   tailwind              -> empty stub, or (realStyles) the page's classes compiled with tailwindcss 3
+//   google fonts          -> empty stub
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -56,6 +57,19 @@ export function sefariaJson(ref) {
 
 const nodeModule = (p) => path.join(REPO, 'node_modules', p);
 
+// The CSS the Tailwind CDN would generate for index.html (dark mode by class), built once
+let tailwindScript;
+async function realTailwind() {
+  if (!tailwindScript) {
+    const postcss = require('postcss');
+    const tailwindcss = require('tailwindcss');
+    const { css } = await postcss([tailwindcss({ darkMode: 'class', content: [path.join(REPO, 'index.html')] })])
+      .process('@tailwind base; @tailwind components; @tailwind utilities;', { from: undefined });
+    tailwindScript = `document.head.appendChild(Object.assign(document.createElement('style'), { textContent: ${JSON.stringify(css)} }));`;
+  }
+  return tailwindScript;
+}
+
 /**
  * Opens the app in a fresh browser context.
  *   timezoneId   browser time zone (default Asia/Jerusalem)
@@ -66,10 +80,12 @@ const nodeModule = (p) => path.join(REPO, 'node_modules', p);
  *   serviceWorkers  'block' (default) or 'allow' to run sw.js
  *   fakeTimers   install a controllable clock (page.clock.fastForward) instead of only freezing the time
  *   colorScheme  'light' (default) or 'dark' device setting
+ *   realStyles   load real Tailwind styles (for layout checks) instead of none
+ *   width        viewport width (default 400)
  * Returns { context, page, errors, apiRequests, setOffline(bool) }; offline fails every request, local ones too.
  */
-export async function openApp(browser, appUrl, { timezoneId = 'Asia/Jerusalem', now, delay = () => 0, fail = () => false, serviceWorkers = 'block', fakeTimers = false, colorScheme = 'light' } = {}) {
-  const context = await browser.newContext({ timezoneId, serviceWorkers, colorScheme, viewport: { width: 400, height: 900 } });
+export async function openApp(browser, appUrl, { timezoneId = 'Asia/Jerusalem', now, delay = () => 0, fail = () => false, serviceWorkers = 'block', fakeTimers = false, colorScheme = 'light', realStyles = false, width = 400 } = {}) {
+  const context = await browser.newContext({ timezoneId, serviceWorkers, colorScheme, viewport: { width, height: 900 } });
   const errors = [];
   const apiRequests = [];
   let offline = false;
@@ -102,7 +118,7 @@ export async function openApp(browser, appUrl, { timezoneId = 'Asia/Jerusalem', 
         : u.pathname.includes('@babel/standalone') ? '@babel/standalone/babel.min.js' : null;
       if (file) return route.fulfill({ path: nodeModule(file), contentType: 'text/javascript' });
     }
-    if (u.hostname === 'cdn.tailwindcss.com') return route.fulfill({ body: '', contentType: 'text/javascript' });
+    if (u.hostname === 'cdn.tailwindcss.com') return route.fulfill({ body: realStyles ? await realTailwind() : '', contentType: 'text/javascript' });
     if (u.hostname.startsWith('fonts.')) return route.fulfill({ body: '', contentType: 'text/css' });
     if (u.hostname === 'www.hebcal.com' && u.pathname === '/hebcal') return respond(route, url, () => hebcalJson(u.searchParams));
     if (u.hostname === 'www.hebcal.com' && u.pathname === '/converter') return respond(route, url, () => converterJson(u.searchParams));
