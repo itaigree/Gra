@@ -15,6 +15,10 @@ const nextDay = (page) => page.locator('button[title="יום הבא"]').click();
 const prevDay = (page) => page.locator('button[title="יום קודם"]').click();
 const showGregorian = (page) => page.getByRole('button', { name: 'לועזי' }).click();
 const hebrewSelect = (page, i) => page.locator('footer select').nth(i);
+const applyButton = (page) => page.getByRole('button', { name: 'הצג את התאריך שנבחר', exact: true });
+const applyDate = (page) => applyButton(page).click();
+const applyEnabled = async (page) => (await applyButton(page).getAttribute('aria-disabled')) === 'false';
+const dateAlert = (page) => page.locator('footer [role=alert]');
 const isHebrewDate = (screen, day, year) => screen.hebrewDate.startsWith(`${day} `) && screen.hebrewDate.endsWith(` ${year}`);
 // A snapshot without waiting for loading to finish
 const glance = (page) => page.evaluate(() => ({
@@ -222,12 +226,14 @@ test('the Hebrew date pickers show the loaded date, including Shvat and Adar', a
   assert.ok(months.includes("אדר א'") && months.includes("אדר ב'") && !months.includes('אדר'), months.join());
 
   await hebrewSelect(page, 0).selectOption('14');
-  await waitForScreen(page, s => s.hebrewSelects[0].label === 'י״ד' && s.hebrewDate.startsWith('י״ד'));
   await hebrewSelect(page, 1).selectOption('Adar II'); // Purim of a leap year
+  await applyDate(page);
   screen = await waitForScreen(page, s => crowned(s)[0] === 'פורים');
   assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['י״ד', "אדר ב'", 'ה׳ תשפ״ז']);
 
   await hebrewSelect(page, 2).selectOption('5788'); // a regular year has a single Adar
+  assert.equal((await readScreen(page)).hebrewSelects[1].label, 'אדר');
+  await applyDate(page);
   screen = await waitForScreen(page, s => isHebrewDate(s, 'י״ד', 'תשפ״ח') && crowned(s)[0] === 'פורים');
   assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['י״ד', 'אדר', 'ה׳ תשפ״ח']);
   // the app asks for "Adar" itself rather than relying on the server to understand "Adar II" in a regular year
@@ -369,14 +375,17 @@ test('Hebrew date picks: the last choice wins, even when an earlier conversion i
     delay: url => (url.includes('h2g=1') && [1, 3].includes(++conversions) ? 1500 : 0),
   });
   await readScreen(page);
-  await hebrewSelect(page, 0).selectOption('20'); // slow
+  await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page); // slow
   await hebrewSelect(page, 0).selectOption('22');
+  await applyDate(page);
   await page.waitForTimeout(2000);
   let screen = await readScreen(page);
   assert.equal(screen.hebrewSelects[0].label, 'כ״ב');
   assert.ok(screen.hebrewDate.startsWith('כ״ב'), screen.hebrewDate);
 
-  await hebrewSelect(page, 0).selectOption('25'); // slow, then the user goes back to today
+  await hebrewSelect(page, 0).selectOption('25');
+  await applyDate(page); // slow, and then the user goes back to today
   await page.getByRole('button', { name: 'הצג את היום' }).click();
   await page.waitForTimeout(2000);
   screen = await readScreen(page);
@@ -389,13 +398,25 @@ test('Hebrew date picks: the last choice wins, even when an earlier conversion i
   await context.close();
 });
 
-test('a failed Hebrew date conversion puts the pickers back on the date shown', async () => {
-  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', fail: url => (url.includes('h2g=1') ? 'abort' : false) });
-  const before = (await readScreen(page)).hebrewSelects.map(s => s.label);
+test('a failed Hebrew date conversion keeps the choice, says so, and tries again when the connection returns', async () => {
+  let offline = true;
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', fail: url => (offline && url.includes('h2g=1') ? 'abort' : false) });
+  await readScreen(page);
   await hebrewSelect(page, 1).selectOption('Nisan');
-  const screen = await waitForScreen(page, s => s.hebrewSelects[1].label === before[1]);
-  assert.deepEqual(screen.hebrewSelects.map(s => s.label), before);
-  assert.deepEqual(crowned(screen), ['יום ראשון']);
+  await applyDate(page);
+  await dateAlert(page).waitFor();
+  let screen = await readScreen(page);
+  assert.equal(screen.hebrewSelects[1].label, 'ניסן'); // the choice is kept
+  assert.deepEqual(crowned(screen), ['יום ראשון']); // and today is still shown
+  assert.equal(await applyEnabled(page), true);
+  offline = false;
+  await context.setOffline(true);
+  await context.setOffline(false); // 'online'
+  // 14 Nisan 5787 is a Wednesday (today, 14 Cheshvan, is a Sunday)
+  screen = await waitForScreen(page, s => isHebrewDate(s, 'י״ד', 'תשפ״ז') && s.chips[0]?.name === 'יום רביעי' && s.verses.length > 0);
+  assert.equal(screen.hebrewSelects[1].label, 'ניסן');
+  assert.equal(await dateAlert(page).count(), 0);
+  assert.equal(await applyEnabled(page), false);
   await context.close();
 });
 
@@ -592,6 +613,7 @@ test('"today" while a Hebrew date pick is on its way puts the pickers back, even
   });
   await readScreen(page);
   await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page);
   await page.getByRole('button', { name: 'הצג את היום' }).click();
   await page.waitForTimeout(2000);
   const screen = await readScreen(page);
@@ -604,7 +626,8 @@ test('a failed Hebrew date pick does not stop "today" from following the clock',
   const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', fail: url => (url.includes('h2g=1') ? 'abort' : false) });
   await readScreen(page);
   await hebrewSelect(page, 0).selectOption('20');
-  await waitForScreen(page, s => s.hebrewSelects[0].label === 'י״ד');
+  await applyDate(page);
+  await dateAlert(page).waitFor();
   await page.clock.setFixedTime(new Date('2026-10-26T07:00:00+02:00'));
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await waitForScreen(page, s => crowned(s)[0] === 'יום שני');
@@ -616,6 +639,7 @@ test('moving from the 30th to a month of 29 days lands on its last day', async (
   let screen = await readScreen(page);
   assert.equal(screen.hebrewSelects[0].label, 'ל׳');
   await hebrewSelect(page, 1).selectOption('Tevet'); // Tevet has 29 days
+  await applyDate(page);
   screen = await waitForScreen(page, s => isHebrewDate(s, 'כ״ט', 'תשפ״ז'));
   assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['כ״ט', 'טבת', 'ה׳ תשפ״ז']);
   await context.close();
@@ -659,7 +683,10 @@ test('typing a year in the Gregorian field does not load the years on the way', 
   await page.locator('footer input[type=date]').fill('0202-10-25');
   await page.waitForTimeout(500);
   assert.ok(!apiRequests.some(u => u.includes('year=202&')), apiRequests.join('\n'));
-  assert.equal((await readScreen(page)).gregorianInput, '2026-10-25');
+  assert.equal(await applyEnabled(page), false);
+  await applyButton(page).click({ force: true }); // pressing the dimmed button does nothing
+  await page.waitForTimeout(500);
+  assert.ok(!apiRequests.some(u => u.includes('year=202&')), apiRequests.join('\n'));
   await context.close();
 });
 
@@ -702,4 +729,268 @@ test('the 8th day of Pesach abroad', async () => {
   assert.equal(screen.heading, 'פרק קלח');
   assert.equal(screen.verses.length, VERSE_COUNTS[138]);
   await context.close();
+});
+
+test('choosing a Hebrew date changes nothing until "הצג" is pressed', async () => {
+  const { page, context, apiRequests } = await open({ now: '2026-10-25T09:00:00+02:00' }); // Sunday 14 Cheshvan 5787
+  let screen = await readScreen(page);
+  assert.equal(await applyEnabled(page), false);
+  const requestsBefore = apiRequests.length;
+  await applyButton(page).click({ force: true }); // the dimmed button does nothing
+  await page.waitForTimeout(300);
+  assert.equal(apiRequests.length, requestsBefore);
+
+  await hebrewSelect(page, 0).selectOption('20');
+  await hebrewSelect(page, 1).selectOption('Kislev');
+  await hebrewSelect(page, 2).selectOption('5788');
+  await page.waitForTimeout(500);
+  screen = await readScreen(page);
+  assert.equal(apiRequests.length, requestsBefore); // nothing was loaded
+  assert.ok(isHebrewDate(screen, 'י״ד', 'תשפ״ז'), screen.hebrewDate); // still showing today
+  assert.deepEqual(crowned(screen), ['יום ראשון']);
+  assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['כ׳', 'כסלו', 'ה׳ תשפ״ח']);
+  assert.equal(await applyEnabled(page), true);
+
+  await applyDate(page);
+  screen = await waitForScreen(page, s => isHebrewDate(s, 'כ׳', 'תשפ״ח') && s.verses.length > 0);
+  assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['כ׳', 'כסלו', 'ה׳ תשפ״ח']);
+  assert.equal(await applyEnabled(page), false);
+
+  // choosing the date that is already shown leaves nothing to show
+  await hebrewSelect(page, 0).selectOption('21');
+  assert.equal(await applyEnabled(page), true);
+  await hebrewSelect(page, 0).selectOption('20');
+  assert.equal(await applyEnabled(page), false);
+  await context.close();
+});
+
+test('the arrows move from the date shown and drop a date chosen but not shown', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' }); // 14 Cheshvan 5787
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('20');
+  await nextDay(page);
+  const screen = await waitForScreen(page, s => isHebrewDate(s, 'ט״ו', 'תשפ״ז') && s.verses.length > 0);
+  assert.equal(screen.hebrewSelects[0].label, 'ט״ו');
+  assert.equal(await applyEnabled(page), false);
+  await context.close();
+});
+
+test('a Gregorian date is shown only when "הצג" is pressed', async () => {
+  const { page, context, apiRequests } = await open({ now: '2026-10-25T09:00:00+02:00' });
+  await readScreen(page);
+  await showGregorian(page);
+  const requestsBefore = apiRequests.length;
+  await page.locator('footer input[type=date]').fill('2026-12-06'); // Chanukah, day 2
+  await page.waitForTimeout(500);
+  assert.equal(apiRequests.length, requestsBefore);
+  assert.deepEqual(crowned(await readScreen(page)), ['יום ראשון']);
+  await applyDate(page);
+  const screen = await waitForScreen(page, s => crowned(s)[0] === "ב' דחנוכה" && s.verses.length > 0);
+  assert.equal(screen.gregorianInput, '2026-12-06');
+  assert.equal(await applyEnabled(page), false);
+  await context.close();
+});
+
+const isDark = (page) => page.evaluate(() => document.documentElement.classList.contains('dark'));
+const themeColor = (page) => page.evaluate(() => document.querySelector('meta[name="theme-color"]').content);
+
+test('dark mode follows the device, and the choice made in the app is remembered', async () => {
+  let { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', colorScheme: 'dark' });
+  await readScreen(page);
+  assert.equal(await isDark(page), true);
+  assert.equal(await themeColor(page), '#1c1917');
+
+  const toggle = page.getByRole('button', { name: 'מצב כהה', exact: true });
+  assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+  await toggle.click();
+  assert.equal(await isDark(page), false);
+  assert.equal(await themeColor(page), '#f5f5f4');
+  await page.reload();
+  await readScreen(page);
+  assert.equal(await isDark(page), false); // the choice wins over the device setting
+  await context.close();
+
+  ({ page, context } = await open({ now: '2026-10-25T09:00:00+02:00', colorScheme: 'light' }));
+  await readScreen(page);
+  assert.equal(await isDark(page), false);
+  await page.emulateMedia({ colorScheme: 'dark' }); // no choice made: follows the device as it changes
+  await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
+  await context.close();
+});
+
+test('dark mode is on before the app has even started', async () => {
+  // the app never starts here, so only the early script in <head> can have set it
+  const { page, context } = await open({ colorScheme: 'dark', fail: url => (url.endsWith('/gra-logic.js') ? '404' : false) });
+  assert.equal(await isDark(page), true);
+  assert.equal(await themeColor(page), '#1c1917');
+  await context.close();
+});
+
+test('changing only the year can be shown', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' }); // 14 Cheshvan 5787
+  await readScreen(page);
+  await hebrewSelect(page, 2).selectOption('5788');
+  assert.equal(await applyEnabled(page), true);
+  await applyDate(page);
+  await waitForScreen(page, s => isHebrewDate(s, 'י״ד', 'תשפ״ח') && s.verses.length > 0);
+  await context.close();
+});
+
+test('a date that was shown with "הצג" stays when the clock passes 18:00', async () => {
+  const { page, context } = await open({ now: '2026-10-23T17:59:00+03:00', fakeTimers: true }); // Friday
+  await readScreen(page);
+  await showGregorian(page);
+  await page.locator('footer input[type=date]').fill('2026-12-06');
+  await applyDate(page);
+  await waitForScreen(page, s => crowned(s)[0] === "ב' דחנוכה" && s.verses.length > 0);
+  await page.clock.fastForward('02:00');
+  await page.waitForTimeout(500);
+  assert.deepEqual(crowned(await readScreen(page)), ["ב' דחנוכה"]);
+  await context.close();
+});
+
+test('while a chosen date loads, the pickers already show it', async () => {
+  // 20 Cheshvan 5787 = Sat 31 Oct 2026; its calendar answer is slow
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', delay: url => (url.includes('date=2026-10-31') ? 1500 : 0) });
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page);
+  await page.waitForTimeout(300);
+  assert.equal((await glance(page)).loadingDay, true);
+  assert.equal(await hebrewSelect(page, 0).evaluate(s => s.selectedOptions[0].textContent), 'כ׳');
+  assert.equal(await hebrewSelect(page, 0).isDisabled(), true); // no choosing from a half-loaded date
+  await waitForScreen(page, s => isHebrewDate(s, 'כ׳', 'תשפ״ז') && s.verses.length > 0);
+  await context.close();
+});
+
+test('Adar keeps the month that was chosen when the year changes back and forth', async () => {
+  const { page, context, apiRequests } = await open({ now: '2027-03-23T09:00:00+02:00' }); // Purim, 14 Adar II 5787
+  await readScreen(page);
+  await hebrewSelect(page, 2).selectOption('5788'); // a regular year: Adar
+  assert.equal(await hebrewSelect(page, 1).evaluate(s => s.selectedOptions[0].textContent), 'אדר');
+  await hebrewSelect(page, 2).selectOption('5787'); // back: still Adar II, nothing to show
+  assert.equal(await hebrewSelect(page, 1).evaluate(s => s.selectedOptions[0].textContent), "אדר ב'");
+  assert.equal(await applyEnabled(page), false);
+
+  await hebrewSelect(page, 2).selectOption('5788');
+  await hebrewSelect(page, 1).selectOption('Adar'); // chosen in a regular year...
+  await hebrewSelect(page, 2).selectOption('5790'); // ...and moved to a leap year: Adar I
+  assert.equal(await hebrewSelect(page, 1).evaluate(s => s.selectedOptions[0].textContent), "אדר א'");
+  await applyDate(page);
+  await waitForScreen(page, s => isHebrewDate(s, 'י״ד', 'תש״צ') && s.verses.length > 0);
+  assert.ok(apiRequests.some(u => u.includes('hy=5790&hm=Adar%20I&')), apiRequests.filter(u => u.includes('h2g')).join('\n'));
+  await context.close();
+});
+
+test('a Hebrew choice does not light "הצג" in the Gregorian view', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' });
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('20');
+  await showGregorian(page);
+  assert.equal(await applyEnabled(page), false);
+  await context.close();
+});
+
+test('choosing a date and then the shown date again leaves nothing pending, even after the day changes', async () => {
+  const { page, context } = await open({ now: '2026-10-23T17:58:00+03:00', fakeTimers: true }); // Friday 12 Cheshvan
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('15');
+  await hebrewSelect(page, 0).selectOption('12');
+  assert.equal(await applyEnabled(page), false);
+  await page.clock.fastForward('03:00'); // 18:01: Shabbat 13 Cheshvan is shown
+  const screen = await waitForScreen(page, s => isHebrewDate(s, 'י״ג', 'תשפ״ז') && s.verses.length > 0);
+  assert.equal(screen.hebrewSelects[0].label, 'י״ג');
+  assert.equal(await applyEnabled(page), false);
+  await context.close();
+});
+
+test('changing the pickers while "הצג" is still converting keeps the newer choice', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', delay: url => (url.includes('h2g=1') ? 1200 : 0) });
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page);
+  await hebrewSelect(page, 1).selectOption('Kislev');
+  await page.waitForTimeout(2000);
+  const screen = await readScreen(page);
+  assert.ok(isHebrewDate(screen, 'י״ד', 'תשפ״ז'), screen.hebrewDate); // the older choice was not shown
+  assert.deepEqual(screen.hebrewSelects.map(s => s.label), ['כ׳', 'כסלו', 'ה׳ תשפ״ז']);
+  assert.equal(await applyEnabled(page), true);
+  await context.close();
+});
+
+test('"הצג" keeps the keyboard focus after showing the date', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' });
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('20');
+  await applyButton(page).focus();
+  await page.keyboard.press('Enter');
+  await waitForScreen(page, s => isHebrewDate(s, 'כ׳', 'תשפ״ז') && s.verses.length > 0);
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'הצג את התאריך שנבחר');
+  await context.close();
+});
+
+test('choosing the 30th of a 29-day month that is already shown keeps following today', async () => {
+  const { page, context } = await open({ now: '2027-01-08T09:00:00+02:00' }); // 29 Tevet 5787
+  await readScreen(page);
+  await hebrewSelect(page, 0).selectOption('30');
+  await applyDate(page);
+  await page.waitForTimeout(500);
+  assert.equal((await readScreen(page)).hebrewSelects[0].label, 'כ״ט');
+  await page.clock.setFixedTime(new Date('2027-01-09T07:00:00+02:00'));
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await waitForScreen(page, s => isHebrewDate(s, 'א׳', 'תשפ״ז') && s.verses.length > 0); // 1 Sh'vat
+  await context.close();
+});
+
+test('a cleared Gregorian date field shows the current date again when left', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' });
+  await readScreen(page);
+  await showGregorian(page);
+  await page.locator('footer input[type=date]').fill('');
+  await page.locator('h1').click();
+  assert.equal(await page.locator('footer input[type=date]').inputValue(), '2026-10-25');
+  await context.close();
+});
+
+test('switching the theme back to the device setting follows the device again', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', colorScheme: 'light' });
+  await readScreen(page);
+  const toggle = page.getByRole('button', { name: 'מצב כהה', exact: true });
+  await toggle.click(); // dark, unlike the device: remembered
+  assert.equal(await page.evaluate(() => localStorage.getItem('shir-shel-yom-theme')), 'dark');
+  await toggle.click(); // light, like the device: nothing to remember
+  assert.equal(await page.evaluate(() => localStorage.getItem('shir-shel-yom-theme')), null);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
+  await context.close();
+});
+
+test('every footer control can be reached on phones, tablets and desktops (real styles)', async () => {
+  for (const width of [320, 360, 768, 1024, 1440]) {
+    for (const mode of ['hebrew', 'gregorian']) {
+      const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00', realStyles: true, width });
+      await readScreen(page);
+      if (mode === 'gregorian') {
+        await showGregorian(page);
+        await page.locator('footer input[type=date]').fill('2026-12-06');
+      } else {
+        await hebrewSelect(page, 0).selectOption('20');
+      }
+      const problems = await page.evaluate(() => {
+        const found = [];
+        if (document.documentElement.scrollWidth > innerWidth) found.push(`page scrolls sideways (${document.documentElement.scrollWidth}px)`);
+        for (const el of document.querySelectorAll('footer button, footer select, footer input')) {
+          el.scrollIntoView({ block: 'center' });
+          const box = el.getBoundingClientRect();
+          const name = el.getAttribute('aria-label') || el.title || el.textContent.trim();
+          const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+          if (box.left < 0 || box.right > innerWidth) found.push(`${name} is off screen`);
+          else if (!(hit === el || el.contains(hit))) found.push(`${name} is covered by ${hit?.textContent.trim() || hit?.tagName}`);
+        }
+        return found;
+      });
+      assert.deepEqual(problems, [], `${width}px, ${mode}`);
+      await context.close();
+    }
+  }
 });
