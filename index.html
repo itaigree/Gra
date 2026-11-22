@@ -329,6 +329,12 @@
             setSelectedDate(dateStr);
           };
 
+          // תאריך שהוצג בלחיצה על "הצג" (בבורר שבתחתית העמוד): חוזרים לראש העמוד לראות את השיר
+          const showPickedDate = (dateStr) => {
+            selectDate(dateStr);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+
           const adjustDay = (amount) => {
             if (!selectedDate) return;
             selectDate(addDays(selectedDate, amount));
@@ -356,7 +362,7 @@
                 // למשל ל' בחודש של 29 יום, כשהיום האחרון שלו כבר מוצג
                 if (newGreg === selectedDateRef.current) return discardDrafts();
                 if (data.hy && data.hm && data.hd) setShownHebrew({ hy: data.hy, hm: data.hm, hd: data.hd });
-                selectDate(newGreg);
+                showPickedDate(newGreg);
                 return;
               }
             } catch (err) { console.error("שגיאה בהמרת תאריך עברי", err); }
@@ -458,7 +464,7 @@
           const applyDate = () => {
             if (!datePending) return;
             if (dateMode === 'hebrew') applyHebrewDate(hebrewPick.hy, hebrewPickMonth, hebrewPick.hd);
-            else selectDate(gregorianPick);
+            else showPickedDate(gregorianPick);
           };
           retryAfterError.current = () => {
             if (error || psalmFailed) retry();
