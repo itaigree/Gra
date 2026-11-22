@@ -764,6 +764,28 @@ test('choosing a Hebrew date changes nothing until "הצג" is pressed', async (
   await context.close();
 });
 
+test('showing a chosen date goes back to the top of the page', async () => {
+  const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' }); // 14 Cheshvan 5787
+  await readScreen(page);
+  const scrollToBottom = () => page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const waitForTop = () => page.waitForFunction(() => window.scrollY === 0, null, { timeout: 3000 });
+
+  await scrollToBottom();
+  assert.ok(await page.evaluate(() => window.scrollY) > 0, 'the page is long enough to scroll');
+  await hebrewSelect(page, 0).selectOption('20');
+  await applyDate(page);
+  await waitForScreen(page, s => isHebrewDate(s, 'כ׳', 'תשפ״ז') && s.verses.length > 0);
+  await waitForTop();
+
+  await showGregorian(page);
+  await page.locator('footer input[type=date]').fill('2026-12-01');
+  await scrollToBottom();
+  assert.ok(await page.evaluate(() => window.scrollY) > 0);
+  await applyDate(page);
+  await waitForTop();
+  await context.close();
+});
+
 test('the arrows move from the date shown and drop a date chosen but not shown', async () => {
   const { page, context } = await open({ now: '2026-10-25T09:00:00+02:00' }); // 14 Cheshvan 5787
   await readScreen(page);
